@@ -294,7 +294,24 @@ timeline clock.
 
 ---
 
+## ✅ Phase 11 — Resources
+
+**Goal:** Resources — Minerals, Water, Gas, Energy.
+
+**Delivered**
+
+- **`sim/resources.ts`**: Pure deterministic resource generation engine computing planetary abundances (Silicates, Ferrous Metals, Precious Metals, Radioactives/Fissiles, Water Ice, Liquid Water, Hydrocarbons, Hydrogen, Helium, Noble Gases, Solar Irradiance, Geothermal & Wind potential, Fusion fuel).
+- **Resource Deposits Generator**: Procedural generation of localized resource reserve deposits with reserve estimation units, categories, accessibility metrics, and rich physical descriptions.
+- **Inspector Integration**: Extended `PlanetInspector` with a full Resources card breakdown (percentages, meters, irradiance, geothermal rating) and discrete Major Deposits cards.
+
+**Verification**
+
+- `npm run build` succeeds with zero errors (TypeScript project references + Vite).
+- All resource values derive deterministically without backend database requirements.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 11** — Resources: Minerals, Water, Gas, Energy.
+- **Phase 12** — Chemistry engine: Elements, Compounds, Reactions.
 - …through **Phase 40** — production release.

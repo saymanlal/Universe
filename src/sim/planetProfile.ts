@@ -17,6 +17,8 @@ export interface AtmosphereComponent {
   fraction: number; // 0..1
 }
 
+import { generateResourceProfile, type BodyResourceProfile } from '@/sim/resources';
+
 export interface PlanetProfile {
   earthMasses: number;
   densityRel: number; // relative to Earth
@@ -36,6 +38,7 @@ export interface PlanetProfile {
   habitability: number; // 0..1
   lifeProbability: number; // 0..1
   lifeLabel: string;
+  resources: BodyResourceProfile;
 }
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
@@ -227,6 +230,25 @@ export function computeProfile(planet: Planet, star: Star): PlanetProfile {
   const lifeProbability = +clamp01(habitability * (0.75 + rng.next() * 0.25)).toFixed(3);
   const biome = computeBiome(planet.type, surfaceTemp, waterCoverage, habitability);
 
+  const partialProfile = {
+    earthMasses,
+    densityRel,
+    gravity,
+    rotationHours,
+    tidallyLocked,
+    axialTilt,
+    atmosphere,
+    waterCoverage: +waterCoverage.toFixed(3),
+    surfaceTemp,
+    biome,
+    albedo,
+    habitability,
+    lifeProbability,
+    lifeLabel: lifeLabelFor(lifeProbability),
+  };
+
+  const resources = generateResourceProfile(star, planet, partialProfile);
+
   const profile: PlanetProfile = {
     earthMasses,
     densityRel,
@@ -242,6 +264,7 @@ export function computeProfile(planet: Planet, star: Star): PlanetProfile {
     habitability,
     lifeProbability,
     lifeLabel: lifeLabelFor(lifeProbability),
+    resources,
   };
 
   cache.set(planet.id, profile);
