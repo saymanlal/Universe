@@ -21,7 +21,10 @@ interface UniverseState {
   activeId: string | null;
   camera: Camera;
   time: TimeState;
+  /** Primary selection (last picked) — what the inspector shows. */
   selection: Selection | null;
+  /** Full selection set (supports multi-select). Includes the primary. */
+  selections: Selection[];
   loading: boolean;
 
   // lifecycle
@@ -47,6 +50,9 @@ interface UniverseState {
   /** Jump the active universe's clock to an absolute sim-second value (clamped ≥ 0). */
   setSimTime: (value: number) => void;
   setSelection: (selection: Selection | null) => void;
+  /** Toggle an entity in the selection set (multi-select). */
+  toggleSelection: (selection: Selection) => void;
+  clearSelection: () => void;
 
   // derived
   active: () => Universe | null;
@@ -80,6 +86,7 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
   camera: { ...DEFAULT_CAMERA },
   time: { ...DEFAULT_TIME },
   selection: null,
+  selections: [],
   loading: true,
 
   init: async () => {
@@ -114,6 +121,7 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
       camera: { ...DEFAULT_CAMERA },
       time: { ...DEFAULT_TIME },
       selection: null,
+      selections: [],
     }));
     return universe;
   },
@@ -175,6 +183,7 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
       camera: { ...DEFAULT_CAMERA },
       time: { ...DEFAULT_TIME },
       selection: null,
+      selections: [],
     });
     await setSetting(ACTIVE_KEY, id);
   },
@@ -198,6 +207,7 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
       universes: [branch, ...s.universes],
       activeId: branch.id,
       selection: null,
+      selections: [],
     }));
     return branch;
   },
@@ -248,7 +258,18 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
     }));
   },
 
-  setSelection: (selection) => set({ selection }),
+  setSelection: (selection) => set({ selection, selections: selection ? [selection] : [] }),
+
+  toggleSelection: (selection) =>
+    set((s) => {
+      const exists = s.selections.some((x) => x.id === selection.id);
+      const selections = exists
+        ? s.selections.filter((x) => x.id !== selection.id)
+        : [...s.selections, selection];
+      return { selections, selection: selections[selections.length - 1] ?? null };
+    }),
+
+  clearSelection: () => set({ selection: null, selections: [] }),
 
   active: () => {
     const { activeId, universes } = get();

@@ -252,7 +252,29 @@ timeline clock.
 
 ---
 
+## ✅ Phase 9 — God Tools
+
+**Goal:** God tools — spawn, delete, move, clone, search, teleport, selection, multi-selection, undo, redo.
+
+**Delivered**
+
+- **`sim/edits.ts` & `state/useEditsStore.ts`**: Implemented the persistent overrides index layer. Admin actions (spawn, delete, move, clone) are saved as overrides to IndexedDB without duplicating procedural star data.
+- **Interactive God Tools**: 
+  - **Spawn**: Place new custom stars directly into the canvas.
+  - **Delete**: Soft-delete selected stars (procedural or spawned) across single or multi-selections.
+  - **Move**: Click & drag or target-click to reposition stars in world space.
+  - **Clone**: Duplicate single or multi-selected stars with spatial jitter.
+- **Multi-Selection & Teleportation**: Multi-select support (Shift/Ctrl + Click) across stars and system objects, plus instant teleport & focus controls in the God Panel.
+- **Full History Stack (Undo/Redo)**: Integrated linear undo/redo stacks for all star manipulation actions, fully backed by IndexedDB.
+
+**Verification**
+
+- `npm run build` passes with zero errors.
+- All spawn/delete/move/clone actions update the WebGL view in real time and persist per universe in IndexedDB.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 9** — God tools: spawn/delete/move/clone, multi-select, undo/redo.
+- **Phase 10** — Full Demo: Visible universe, galaxies, solar systems, planets, zoom, search, inspector, timeline, universe manager, god mode.
 - …through **Phase 40** — production release.

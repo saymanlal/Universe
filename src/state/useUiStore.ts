@@ -17,12 +17,15 @@ interface UiState {
   managerOpen: boolean;
   /** Search command palette. */
   searchOpen: boolean;
+  /** Active God-Mode placement tool (armed for the next canvas click). */
+  godTool: 'none' | 'spawn' | 'move';
 
   togglePanel: (panel: keyof PanelVisibility) => void;
   setLeftWidth: (w: number) => void;
   setRightWidth: (w: number) => void;
   setManagerOpen: (open: boolean) => void;
   setSearchOpen: (open: boolean) => void;
+  setGodTool: (tool: 'none' | 'spawn' | 'move') => void;
 }
 
 export const MIN_DOCK_WIDTH = 220;
@@ -36,6 +39,7 @@ export const useUiStore = create<UiState>((set) => ({
   rightWidth: 320,
   managerOpen: false,
   searchOpen: false,
+  godTool: 'none',
 
   togglePanel: (panel) =>
     set((s) => ({ panels: { ...s.panels, [panel]: !s.panels[panel] } })),
@@ -43,4 +47,5 @@ export const useUiStore = create<UiState>((set) => ({
   setRightWidth: (w) => set({ rightWidth: clampDock(w) }),
   setManagerOpen: (open) => set({ managerOpen: open }),
   setSearchOpen: (open) => set({ searchOpen: open }),
+  setGodTool: (tool) => set({ godTool: tool }),
 }));

@@ -178,3 +178,23 @@ export const StepBackIcon = (p: IconProps) => (
     <rect x="5.6" y="6" width="2.4" height="12" />
   </svg>
 );
+
+export const UndoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M9 7L4 12l5 5" />
+    <path d="M4 12h11a5 5 0 015 5v1" />
+  </svg>
+);
+
+export const RedoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M15 7l5 5-5 5" />
+    <path d="M20 12H9a5 5 0 00-5 5v1" />
+  </svg>
+);
+
+export const MoveIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
+  </svg>
+);

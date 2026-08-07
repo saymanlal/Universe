@@ -12,6 +12,7 @@ import { ViewportOverlay } from '@/canvas/ViewportOverlay';
 import { MiniMap } from '@/canvas/MiniMap';
 import { useUiStore } from '@/state/useUiStore';
 import { useUniverseStore } from '@/state/useUniverseStore';
+import { useEditsStore } from '@/state/useEditsStore';
 import { useTimeEngine } from '@/state/useTimeEngine';
 import { useEffect } from 'react';
 
@@ -23,20 +24,64 @@ import { useEffect } from 'react';
 export function DockLayout() {
   useTimeEngine();
   const setSearchOpen = useUiStore((s) => s.setSearchOpen);
+  const activeId = useUniverseStore((s) => s.activeId);
 
-  // Global shortcuts: Ctrl/Cmd+K or "/" opens star search (unless typing).
+  // Load the active universe's God-Mode edits (spawns/deletions) from IndexedDB.
+  useEffect(() => {
+    void useEditsStore.getState().loadForUniverse(activeId);
+  }, [activeId]);
+
+  // Global shortcuts.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = document.activeElement;
       const typing =
         el instanceof HTMLElement &&
         (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+
+      // Star search.
       if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setSearchOpen(true);
-      } else if (e.key === '/' && !typing) {
+        return;
+      }
+      if (e.key === '/' && !typing) {
         e.preventDefault();
         setSearchOpen(true);
+        return;
+      }
+      if (typing) return;
+
+      // Undo / redo (Ctrl/Cmd+Z, Shift for redo, or Ctrl+Y).
+      if ((e.key === 'z' || e.key === 'Z') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (e.shiftKey) useEditsStore.getState().redo();
+        else useEditsStore.getState().undo();
+        return;
+      }
+      if ((e.key === 'y' || e.key === 'Y') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        useEditsStore.getState().redo();
+        return;
+      }
+
+      // Delete selected stars.
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const ids = useUniverseStore
+          .getState()
+          .selections.filter((s) => s.kind === 'star')
+          .map((s) => s.id);
+        if (ids.length > 0) {
+          e.preventDefault();
+          useEditsStore.getState().deleteStars(ids);
+        }
+        return;
+      }
+
+      // Cancel tool / clear selection.
+      if (e.key === 'Escape') {
+        useUiStore.getState().setGodTool('none');
+        useUniverseStore.getState().clearSelection();
       }
     };
     window.addEventListener('keydown', onKey);

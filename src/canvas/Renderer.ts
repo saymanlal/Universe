@@ -7,6 +7,7 @@ import {
   generateChunkStars,
   clearStarCache,
   nearestStar,
+  findStarById,
 } from '@/sim/starfield';
 import type { Star } from '@/sim/star';
 import {
@@ -28,6 +29,8 @@ import { computeProfile, clearProfileCache } from '@/sim/planetProfile';
 import { ZOOM_MIN, ZOOM_MAX, starDetail, systemDetail } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { useStatsStore } from '@/state/useStatsStore';
+import { useUiStore } from '@/state/useUiStore';
+import { useEditsStore } from '@/state/useEditsStore';
 
 /** World units per star chunk (shared with the star field generator). */
 const CHUNK_SIZE = STAR_CHUNK_SIZE;
@@ -85,6 +88,7 @@ export class Renderer {
   private seed = 0;
   private disposed = false;
   private unsubscribe: (() => void) | null = null;
+  private unsubscribeEdits: (() => void) | null = null;
 
   /**
    * Smoothed camera actually drawn this frame. It eases toward the store
@@ -145,6 +149,12 @@ export class Renderer {
     this.display = { ...useUniverseStore.getState().camera };
 
     this.bindEvents();
+
+    // Rebuild displayed star chunks whenever the God-Mode edit set changes.
+    this.unsubscribeEdits = useEditsStore.subscribe((s, prev) => {
+      if (s.version !== prev.version) this.clearChunks();
+    });
+
     this.unsubscribe = useUniverseStore.subscribe((s) => {
       const nextSeed = s.active()?.seed ?? 0;
       if (nextSeed !== this.seed) {
@@ -279,56 +289,100 @@ export class Renderer {
   private onPointerUp = (e: PointerEvent) => {
     if (this.dragging) {
       this.dragging = false;
-      this.app.canvas.style.cursor = 'grab';
-      // A click (no meaningful drag) selects the star under the cursor.
+      this.app.canvas.style.cursor = this.toolCursor();
+      // A click (no meaningful drag) triggers the active tool or selection.
       if (!this.movedSinceDown && this.downAt) {
         const rect = this.app.canvas.getBoundingClientRect();
-        this.selectAt(e.clientX - rect.left, e.clientY - rect.top);
+        this.handleClick(
+          e.clientX - rect.left,
+          e.clientY - rect.top,
+          e.shiftKey || e.ctrlKey || e.metaKey,
+        );
       }
       this.downAt = null;
     }
   };
 
-  /** Hit-test the scene at a screen point and update the selection (LOD-aware). */
-  private selectAt(sx: number, sy: number) {
+  private toolCursor(): string {
+    return useUiStore.getState().godTool === 'none' ? 'grab' : 'crosshair';
+  }
+
+  /** Handle a click: run the armed God tool, else select (additive with modifier). */
+  private handleClick(sx: number, sy: number, additive: boolean) {
     const w = this.screenToWorld(sx, sy, this.display);
-    const store = useUniverseStore.getState();
+    const ui = useUiStore.getState();
+    const uni = useUniverseStore.getState();
+    const seed = uni.active()?.seed ?? 0;
+
+    if (ui.godTool === 'spawn') {
+      const star = useEditsStore.getState().spawnStarAt(seed, w.x, w.y);
+      if (star) {
+        uni.setSelection({
+          kind: 'star',
+          id: star.id,
+          label: star.name ?? star.designation,
+          position: { x: star.x, y: star.y },
+        });
+      }
+      ui.setGodTool('none');
+      this.app.canvas.style.cursor = 'grab';
+      return;
+    }
+
+    if (ui.godTool === 'move') {
+      const primary = uni.selection;
+      if (primary && primary.kind === 'star') {
+        const moved = useEditsStore.getState().moveStarTo(primary.id, w.x, w.y);
+        if (moved) {
+          uni.setSelection({
+            kind: 'star',
+            id: moved.id,
+            label: moved.name ?? moved.designation,
+            position: { x: moved.x, y: moved.y },
+          });
+        }
+      }
+      ui.setGodTool('none');
+      this.app.canvas.style.cursor = 'grab';
+      return;
+    }
+
+    const picked = this.pickSelectionAt(w.x, w.y);
+    if (additive) {
+      if (picked) uni.toggleSelection(picked);
+    } else {
+      uni.setSelection(picked);
+    }
+  }
+
+  /** Hit-test the scene at a world point and return a selection descriptor (LOD-aware). */
+  private pickSelectionAt(wx: number, wy: number): Selection | null {
     const detail = starDetail(this.display.zoom);
 
     // Deepest LOD first: planets/moons of the focused system.
     if (systemDetail(this.display.zoom) > 0.5 && this.focusedStar) {
-      const pick = this.pickOrbit(w.x, w.y, 10 / this.display.zoom);
-      if (pick) {
-        store.setSelection(pick);
-        return;
-      }
+      const pick = this.pickOrbit(wx, wy, 10 / this.display.zoom);
+      if (pick) return pick;
     }
 
-    // Zoomed out → galaxies; zoomed in → stars. Each falls back to the other.
+    // Zoomed out → galaxies; zoomed in → stars.
     if (detail < 0.5) {
-      const g = galaxyAt(this.seed, w.x, w.y);
+      const g = galaxyAt(this.seed, wx, wy);
       if (g) {
-        store.setSelection({
-          kind: 'galaxy',
-          id: g.id,
-          label: g.name ?? g.designation,
-          position: { x: g.x, y: g.y },
-        });
-        return;
+        return { kind: 'galaxy', id: g.id, label: g.name ?? g.designation, position: { x: g.x, y: g.y } };
       }
     }
 
-    const star = nearestStar(this.seed, w.x, w.y, 12 / this.display.zoom);
+    const star = nearestStar(this.seed, wx, wy, 12 / this.display.zoom);
     if (star) {
-      store.setSelection({
+      return {
         kind: 'star',
         id: star.id,
         label: star.name ?? star.designation,
         position: { x: star.x, y: star.y },
-      });
-    } else {
-      store.setSelection(null);
+      };
     }
+    return null;
   }
 
   /** Nearest planet/moon of the focused system to a world point, or null. */
@@ -771,27 +825,33 @@ export class Renderer {
     g.circle(0, 0, 12).stroke({ width: 1.5, color: 0x6d8bff, alpha: 0.5 });
   }
 
-  /** Highlight ring around the currently-selected entity (constant screen size). */
+  /** Highlight rings around every selected entity (multi-select aware). */
   private drawSelection(cam: Camera) {
     const g = this.selectionG;
     g.clear();
-    const sel = useUniverseStore.getState().selection;
-    if (!sel?.position) return;
+    const { selection, selections } = useUniverseStore.getState();
+    if (selections.length === 0) return;
+    const simTime = useUniverseStore.getState().active()?.simTime ?? 0;
+    const lw = 1.5 / cam.zoom;
 
-    // Resolve a live position + ring radius by kind. Orbiting bodies move, so
-    // they are recomputed from the sim clock each frame rather than the
-    // (stale) click-time position.
-    let px = sel.position.x;
-    let py = sel.position.y;
-    let r = 14 / cam.zoom;
+    for (const sel of selections) {
+      if (!sel.position) continue;
+      const primary = selection != null && sel.id === selection.id;
 
-    if (sel.kind === 'galaxy') {
-      const gal = findGalaxyById(sel.id);
-      if (gal) r = gal.radius * 1.12;
-    } else if (sel.kind === 'planet' || sel.kind === 'moon') {
-      const resolved = resolveOrbitId(sel.id);
-      if (resolved) {
-        const simTime = useUniverseStore.getState().active()?.simTime ?? 0;
+      // Resolve a live position + ring radius by kind. Orbiting bodies move,
+      // so they are recomputed from the sim clock rather than the click-time
+      // position. Deleted/moved stars may no longer resolve → skip.
+      let px = sel.position.x;
+      let py = sel.position.y;
+      let r = 14 / cam.zoom;
+
+      if (sel.kind === 'galaxy') {
+        const gal = findGalaxyById(sel.id);
+        if (!gal) continue;
+        r = gal.radius * 1.12;
+      } else if (sel.kind === 'planet' || sel.kind === 'moon') {
+        const resolved = resolveOrbitId(sel.id);
+        if (!resolved) continue;
         const { star, planet, moon } = resolved;
         const pos = moon
           ? moonPosition(star, planet, moon, simTime)
@@ -800,18 +860,23 @@ export class Renderer {
         py = pos.y;
         const rad = moon ? moon.radius : planet.radius;
         r = Math.max(rad * 1.8, 9 / cam.zoom);
+      } else if (sel.kind === 'star') {
+        const star = findStarById(sel.id);
+        if (!star) continue; // e.g. deleted by a God edit
+        px = star.x;
+        py = star.y;
       }
-    }
 
-    const lw = 1.5 / cam.zoom;
-    g.circle(px, py, r).stroke({ width: lw, color: 0xa9bbff, alpha: 0.95 });
-    // Small crosshair ticks for a targeting feel.
-    const t = 5 / cam.zoom;
-    g.moveTo(px - r - t, py)
-      .lineTo(px - r, py)
-      .moveTo(px + r, py)
-      .lineTo(px + r + t, py)
-      .stroke({ width: lw, color: 0xa9bbff, alpha: 0.8 });
+      const color = primary ? 0xa9bbff : 0x6d8bff;
+      const alpha = primary ? 0.95 : 0.7;
+      g.circle(px, py, r).stroke({ width: lw, color, alpha });
+      const t = 5 / cam.zoom;
+      g.moveTo(px - r - t, py)
+        .lineTo(px - r, py)
+        .moveTo(px + r, py)
+        .lineTo(px + r + t, py)
+        .stroke({ width: lw, color, alpha: alpha * 0.85 });
+    }
   }
 
   // ---- coordinate labels (screen-space, pooled Text) ----------------------
@@ -879,6 +944,7 @@ export class Renderer {
   destroy() {
     this.disposed = true;
     this.unsubscribe?.();
+    this.unsubscribeEdits?.();
     this.unbindEvents();
     this.clearChunks();
     this.clearGalaxies();
