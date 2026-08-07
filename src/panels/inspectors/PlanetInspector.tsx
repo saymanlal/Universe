@@ -4,6 +4,7 @@ import { resolveOrbitId, planetTypeLabel } from '@/sim/planet';
 import { computeProfile } from '@/sim/planetProfile';
 import { generatePlanetaryChemistry } from '@/core/chemistry';
 import { generatePlanetaryClimate } from '@/core/climate';
+import { generatePlanetaryBiosphere } from '@/core/life';
 import { formatCompact, YEAR_SECONDS } from '@/core/format';
 import { SYS_FRAME } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
@@ -181,6 +182,37 @@ export function PlanetInspector({ id }: { id: string }) {
                   {profile.lifeLabel}
                 </span>
               </div>
+            </Card>
+
+            <SectionTitle>Biosphere & Taxonomy</SectionTitle>
+            <Card>
+              {generatePlanetaryBiosphere(planet, profile).hasLife ? (
+                <>
+                  <Stat label="Biomass Index" value={String(generatePlanetaryBiosphere(planet, profile).totalBiomassIndex)} unit="/100" />
+                  <Stat label="Dominant Domain" value={generatePlanetaryBiosphere(planet, profile).dominantDomain.toUpperCase()} />
+                  <Stat label="Estimated Species" value={String(generatePlanetaryBiosphere(planet, profile).speciesCount)} />
+                  <div className="mt-2 text-[11px] font-medium text-space-300">Key Organism Taxa</div>
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    {generatePlanetaryBiosphere(planet, profile).speciesList.map((sp) => (
+                      <div key={sp.id} className="flex flex-col rounded bg-space-900/50 px-2 py-1.5 border border-space-700/50">
+                        <div className="flex justify-between items-center">
+                          <span className="font-mono text-xs font-semibold" style={{ color: sp.color }}>
+                            {sp.name} <span className="text-[10px] text-space-400 font-normal uppercase">({sp.domain})</span>
+                          </span>
+                          <span className="text-[9px] font-mono px-1 rounded bg-space-800 text-space-300 uppercase">{sp.trophicRole.replace('_', ' ')}</span>
+                        </div>
+                        <div className="text-[10px] text-space-400 mt-0.5">{sp.description}</div>
+                        <div className="flex justify-between text-[9px] font-mono text-space-500 mt-1">
+                          <span>Complexity: {Math.round(sp.complexity * 100)}%</span>
+                          <span>Biomass: {Math.round(sp.biomassFraction * 100)}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-space-400 py-1">Sterile world. No biological activity detected.</div>
+              )}
             </Card>
 
             <SectionTitle>Resources</SectionTitle>
