@@ -8,6 +8,9 @@ import { UniverseManager } from '@/panels/UniverseManager';
 import { SearchPanel } from '@/panels/SearchPanel';
 import { ImportExportPanel } from '@/panels/ImportExportPanel';
 import { PluginPanel } from '@/panels/PluginPanel';
+import { ConversationMonitorPanel } from '@/panels/ConversationMonitorPanel';
+import { PhysicsEditorPanel } from '@/panels/PhysicsEditorPanel';
+import { LifeFinderPanel } from '@/panels/LifeFinderPanel';
 import { TimelineBar } from '@/panels/TimelineBar';
 import { UniverseCanvas } from '@/canvas/UniverseCanvas';
 import { ViewportOverlay } from '@/canvas/ViewportOverlay';
@@ -168,6 +171,9 @@ export function DockLayout() {
       <SearchPanel />
       <ImportExportPanel />
       <PluginPanel />
+      <ConversationMonitorPanel />
+      <PhysicsEditorPanel />
+      <LifeFinderPanel />
       <ToastContainer />
     </div>
   );

@@ -4,10 +4,9 @@
  * can share the same limits without importing PixiJS.
  */
 
-/** Zoom bounds. The very low minimum lets the camera pull back to see whole
- *  galaxies and clusters; the maximum resolves individual stars. */
-export const ZOOM_MIN = 0.0004;
-export const ZOOM_MAX = 24;
+/** Zoom bounds. Extremely wide range spanning Multiverse to Quantum scale. */
+export const ZOOM_MIN = 1e-12;
+export const ZOOM_MAX = 1e12;
 
 /**
  * LOD crossfade band (in zoom units) between the galaxy view and the star

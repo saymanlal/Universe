@@ -27,6 +27,7 @@ export function Toolbar() {
   const setPluginPanelOpen = useUiStore((s) => s.setPluginPanelOpen);
   const panels = useUiStore((s) => s.panels);
   const togglePanel = useUiStore((s) => s.togglePanel);
+  const toggleWindow = useUiStore((s) => s.toggleWindow);
 
   return (
     <header className="flex h-11 shrink-0 items-center gap-2 border-b border-space-700 bg-space-900 px-3">
@@ -79,6 +80,30 @@ export function Toolbar() {
         title="Import / Export Universes"
       >
         <DownloadIcon width={16} height={16} />
+      </button>
+
+      <button
+        className="btn btn-icon text-accent-cyan"
+        onClick={() => toggleWindow('conversationMonitor')}
+        title="Live Conversation & Mind Monitor"
+      >
+        💬
+      </button>
+
+      <button
+        className="btn btn-icon text-amber-400"
+        onClick={() => toggleWindow('physicsEditor')}
+        title="Physics & Chemistry Lab"
+      >
+        🧪
+      </button>
+
+      <button
+        className="btn btn-icon text-emerald-400"
+        onClick={() => toggleWindow('searchEverything')}
+        title="Life & Intelligent Civilization Finder"
+      >
+        🔍 Life
       </button>
 
       <button
