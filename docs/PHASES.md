@@ -218,8 +218,37 @@ gravity, rotation, life probability. Everything deterministic.
 
 **Verification**
 
-- `npm run build` passes; every planet yields a full, deterministic profile,
-  shown live in the inspector, with no storage. Vercel Free unchanged.
+- `npm run build` passes cleanly; climate parameters calculate deterministically per world without database or server state. Vercel Free unchanged.
+
+---
+
+## ✅ Phase 14 — Life Generator
+
+**Goal:** Life generator — microbes, plants, animals.
+
+**Delivered**
+
+- **`core/life.ts`** — deterministic procedural generator for planetary life forms: derives microbial extremophiles, photosynthetic/fungal plant flora, and multicellular animal fauna taxonomies, biomass distribution indices, respiration gas requirements, and evolutionary complexity indices.
+- **`PlanetInspector` UI** — added **Biosphere & Taxonomy** section rendering total biomass indices, dominant domain indicators, and detailed organism taxa cards.
+
+**Verification**
+
+- `npm run build` passes cleanly; biological taxa generate deterministically per world without backend or database servers. Vercel Free unchanged.
+
+---
+
+## ✅ Phase 15 — Evolution Engine
+
+**Goal:** Evolution engine — mutation, natural selection, adaptation.
+
+**Delivered**
+
+- **`core/evolution.ts`** — deterministic evolution engine: calculates generation counts, environmental selection pressure, mutation rates, adaptation indices, extinction risk, active trait adaptations, and evolutionary stage transitions (abiogenesis → sentience threshold).
+- **`PlanetInspector` UI** — added **Evolutionary Dynamics** card within the Biosphere inspector section displaying stage classification, generation counters, mutation rate meters, and adaptation progress.
+
+**Verification**
+
+- `npm run build` passes cleanly; evolutionary metrics update deterministically with simulation clock progression. Vercel Free unchanged.
 
 ---
 

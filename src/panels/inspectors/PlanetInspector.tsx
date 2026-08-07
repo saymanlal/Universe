@@ -2,6 +2,10 @@ import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { resolveOrbitId, planetTypeLabel } from '@/sim/planet';
 import { computeProfile } from '@/sim/planetProfile';
+import { generatePlanetaryChemistry } from '@/core/chemistry';
+import { generatePlanetaryClimate } from '@/core/climate';
+import { generatePlanetaryBiosphere } from '@/core/life';
+import { computeEvolutionaryState } from '@/core/evolution';
 import { formatCompact, YEAR_SECONDS } from '@/core/format';
 import { SYS_FRAME } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
@@ -181,6 +185,46 @@ export function PlanetInspector({ id }: { id: string }) {
               </div>
             </Card>
 
+            <SectionTitle>Biosphere & Taxonomy</SectionTitle>
+            <Card>
+              {generatePlanetaryBiosphere(planet, profile).hasLife ? (
+                <>
+                  <Stat label="Biomass Index" value={String(generatePlanetaryBiosphere(planet, profile).totalBiomassIndex)} unit="/100" />
+                  <Stat label="Dominant Domain" value={generatePlanetaryBiosphere(planet, profile).dominantDomain.toUpperCase()} />
+                  <Stat label="Estimated Species" value={String(generatePlanetaryBiosphere(planet, profile).speciesCount)} />
+                  <div className="mt-2 text-[11px] font-medium text-space-300">Key Organism Taxa</div>
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    {generatePlanetaryBiosphere(planet, profile).speciesList.map((sp) => (
+                      <div key={sp.id} className="flex flex-col rounded bg-space-900/50 px-2 py-1.5 border border-space-700/50">
+                        <div className="flex justify-between items-center">
+                          <span className="font-mono text-xs font-semibold" style={{ color: sp.color }}>
+                            {sp.name} <span className="text-[10px] text-space-400 font-normal uppercase">({sp.domain})</span>
+                          </span>
+                          <span className="text-[9px] font-mono px-1 rounded bg-space-800 text-space-300 uppercase">{sp.trophicRole.replace('_', ' ')}</span>
+                        </div>
+                        <div className="text-[10px] text-space-400 mt-0.5">{sp.description}</div>
+                        <div className="flex justify-between text-[9px] font-mono text-space-500 mt-1">
+                          <span>Complexity: {Math.round(sp.complexity * 100)}%</span>
+                          <span>Biomass: {Math.round(sp.biomassFraction * 100)}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 border-t border-space-700/60 pt-2">
+                    <div className="mb-1 text-[11px] font-medium text-space-300">Evolutionary Dynamics</div>
+                    <Stat label="Stage" value={computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).evolutionaryStage.replace('_', ' ').toUpperCase()} />
+                    <Stat label="Simulated Generations" value={formatCompact(computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).generationCount)} />
+                    <Meter label="Mutation rate" value={computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).mutationRate} color="#f43f5e" />
+                    <Meter label="Selection pressure" value={computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).selectionPressure} color="#eab308" />
+                    <Meter label="Adaptation index" value={computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).adaptationIndex} color="#22c55e" />
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-space-400 py-1">Sterile world. No biological activity detected.</div>
+              )}
+            </Card>
+
             <SectionTitle>Resources</SectionTitle>
             <Card>
               <Stat label="Silicates" value={`${Math.round(profile.resources.minerals.silicates * 100)}%`} />
@@ -193,6 +237,67 @@ export function PlanetInspector({ id }: { id: string }) {
               <Stat label="Hydrogen / Helium" value={`${Math.round((profile.resources.gases.hydrogen + profile.resources.gases.helium) * 100)}%`} />
               <Stat label="Solar Irradiance" value={formatCompact(profile.resources.energy.solarIrradiance)} unit="W/m²" />
               <Stat label="Geothermal Potential" value={String(profile.resources.energy.geothermalEnergy)} unit="/100" />
+            </Card>
+
+            <SectionTitle>Climate & Weather</SectionTitle>
+            <Card>
+              <Meter label="Cloud cover" value={generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).cloudCover} color="#94a3b8" />
+              <Meter label="Humidity" value={generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).humidity} color="#38bdf8" />
+              <Stat label="Precipitation" value={generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).precipitationType.replace('_', ' ').toUpperCase()} />
+              <Stat label="Wind speed" value={`${generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).windSpeedKmh} km/h`} />
+              <Stat label="Atmospheric circulation" value={generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).windPattern.replace('_', ' ')} />
+              <Stat
+                label="Thermal range"
+                value={`${generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).temperatureRange.min}K — ${generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).temperatureRange.max}K`}
+              />
+              <Stat label="Seasonal variance" value={`±${generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).seasonalDeltaK} K`} />
+            </Card>
+
+            <SectionTitle>Chemistry & Compounds</SectionTitle>
+            <Card>
+              <div className="mb-2 text-[11px] font-medium text-space-300">Elemental Abundance</div>
+              <div className="grid grid-cols-2 gap-1.5 mb-3">
+                {generatePlanetaryChemistry(planet, profile).elements.slice(0, 6).map((el) => (
+                  <div key={el.symbol} className="flex items-center justify-between rounded bg-space-900/60 px-2 py-1 border border-space-700/50">
+                    <span className="font-mono text-xs font-semibold" style={{ color: el.color }}>
+                      {el.symbol} <span className="text-[10px] text-space-400 font-normal">{el.name}</span>
+                    </span>
+                    <span className="font-mono text-xs text-space-300">{(el.abundance * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mb-2 text-[11px] font-medium text-space-300">Primary Compounds</div>
+              <div className="flex flex-col gap-1.5 mb-3">
+                {generatePlanetaryChemistry(planet, profile).compounds.map((cmp) => (
+                  <div key={cmp.formula} className="flex flex-col rounded bg-space-900/40 px-2 py-1 border border-space-700/40">
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-mono text-xs text-accent font-semibold">{cmp.formula} <span className="text-[11px] text-space-300 font-normal">({cmp.name})</span></span>
+                      <span className="font-mono text-[10px] text-space-400 uppercase">{cmp.state} · {(cmp.fraction * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="text-[10px] text-space-500 mt-0.5">{cmp.description}</div>
+                  </div>
+                ))}
+              </div>
+
+              {generatePlanetaryChemistry(planet, profile).reactions.length > 0 && (
+                <>
+                  <div className="mb-2 text-[11px] font-medium text-space-300">Active Chemical Reactions</div>
+                  <div className="flex flex-col gap-1.5">
+                    {generatePlanetaryChemistry(planet, profile).reactions.map((rxn) => (
+                      <div key={rxn.id} className="flex flex-col rounded bg-space-900/40 px-2 py-1.5 border border-space-700/40">
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className="text-xs text-space-200 font-medium">{rxn.name}</span>
+                          <span className="text-[9px] font-mono px-1 rounded bg-space-800 text-space-400 uppercase">{rxn.energyDelta}</span>
+                        </div>
+                        <div className="font-mono text-[11px] text-accent/90">
+                          {rxn.reactants.join(' + ')} ➔ {rxn.products.join(' + ')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </Card>
 
             {profile.resources.deposits.length > 0 && (
