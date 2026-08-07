@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { resolveOrbitId, planetTypeLabel } from '@/sim/planet';
 import { computeProfile } from '@/sim/planetProfile';
 import { generatePlanetaryChemistry } from '@/core/chemistry';
+import { generatePlanetaryClimate } from '@/core/climate';
 import { formatCompact, YEAR_SECONDS } from '@/core/format';
 import { SYS_FRAME } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
@@ -194,6 +195,20 @@ export function PlanetInspector({ id }: { id: string }) {
               <Stat label="Hydrogen / Helium" value={`${Math.round((profile.resources.gases.hydrogen + profile.resources.gases.helium) * 100)}%`} />
               <Stat label="Solar Irradiance" value={formatCompact(profile.resources.energy.solarIrradiance)} unit="W/m²" />
               <Stat label="Geothermal Potential" value={String(profile.resources.energy.geothermalEnergy)} unit="/100" />
+            </Card>
+
+            <SectionTitle>Climate & Weather</SectionTitle>
+            <Card>
+              <Meter label="Cloud cover" value={generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).cloudCover} color="#94a3b8" />
+              <Meter label="Humidity" value={generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).humidity} color="#38bdf8" />
+              <Stat label="Precipitation" value={generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).precipitationType.replace('_', ' ').toUpperCase()} />
+              <Stat label="Wind speed" value={`${generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).windSpeedKmh} km/h`} />
+              <Stat label="Atmospheric circulation" value={generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).windPattern.replace('_', ' ')} />
+              <Stat
+                label="Thermal range"
+                value={`${generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).temperatureRange.min}K — ${generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).temperatureRange.max}K`}
+              />
+              <Stat label="Seasonal variance" value={`±${generatePlanetaryClimate(planet, profile, useUniverseStore.getState().active()?.simTime).seasonalDeltaK} K`} />
             </Card>
 
             <SectionTitle>Chemistry & Compounds</SectionTitle>
