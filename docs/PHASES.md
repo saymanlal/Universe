@@ -195,8 +195,123 @@ transitions, LOD rendering.
 
 ---
 
+## ✅ Phase 7 — Deep Planet Generator
+
+**Goal:** Planet generator — biome, temperature, atmosphere, water, mass,
+gravity, rotation, life probability. Everything deterministic.
+
+**Delivered**
+
+- **`sim/planetProfile.ts`** — a rich deterministic profile layered on the
+  Phase 6 planet base (never rewriting it): mass (from density × radius³),
+  gravity, density, rotation period (with tidal-locking for close-in worlds),
+  axial tilt, a composed **atmosphere** (pressure + gas components by
+  type/gravity/temperature — H/He giants, CO₂ hothouses, N₂/O₂ temperate…),
+  greenhouse-adjusted **surface temperature**, **water coverage**, **biome**
+  classification, albedo, and a **habitability / life-probability** index from a
+  product of comfort factors (temperature, water, gravity, pressure, star type).
+- **PlanetInspector** expanded with Physical / Atmosphere / Surface /
+  Habitability sections, atmospheric-composition bars, and habitability + life
+  meters with a life-potential label.
+- **Atmosphere halos** rendered on rocky planets in the solar-system view
+  (bluish where water-rich), scaled by pressure and the LOD fade.
+
+**Verification**
+
+- `npm run build` passes; every planet yields a full, deterministic profile,
+  shown live in the inspector, with no storage. Vercel Free unchanged.
+
+---
+
+## ✅ Phase 8 — Time Engine
+
+**Goal:** Time engine — pause, play, speed, minute/hour/day/year, fast forward,
+timeline clock.
+
+**Delivered**
+
+- **`TimelineBar`** — a dedicated bottom control surface: transport (step
+  back/forward, rewind, play/pause, play-forward, fast-forward), speed presets
+  (1× → min/hour/day/week/year per second), a reverse toggle, a large live
+  **timeline clock** (Y · D · HH:MM:SS + rate + elapsed), and a **jump-to-year**
+  control.
+- **Reverse & jump** — `TimeState.reverse` lets the clock run backward; the
+  engine advances a *signed* delta. `advanceTime` now clamps ≥ 0 and supports
+  negative steps; new `setSimTime` jumps to any absolute time. Because the whole
+  cosmos is a pure function of `simTime`, stepping/rewinding/jumping just
+  re-derives everything (orbits included) deterministically.
+- **Fast-forward** runs at 50 yr/s; **step** advances exactly one tick of the
+  selected granularity while paused.
+- Toolbar transport simplified to a compact play/pause + state, with a Timeline
+  panel toggle; `core/format.simTimeParts` powers the clock.
+
+**Verification**
+
+- `npm run build` passes; play/pause/reverse/step/fast-forward/jump all drive
+  the deterministic clock; planets orbit as time runs. Vercel Free unchanged.
+
+---
+
+## ✅ Phase 9 — God Tools
+
+**Goal:** God tools — spawn, delete, move, clone, search, teleport, selection, multi-selection, undo, redo.
+
+**Delivered**
+
+- **`sim/edits.ts` & `state/useEditsStore.ts`**: Implemented the persistent overrides index layer. Admin actions (spawn, delete, move, clone) are saved as overrides to IndexedDB without duplicating procedural star data.
+- **Interactive God Tools**: 
+  - **Spawn**: Place new custom stars directly into the canvas.
+  - **Delete**: Soft-delete selected stars (procedural or spawned) across single or multi-selections.
+  - **Move**: Click & drag or target-click to reposition stars in world space.
+  - **Clone**: Duplicate single or multi-selected stars with spatial jitter.
+- **Multi-Selection & Teleportation**: Multi-select support (Shift/Ctrl + Click) across stars and system objects, plus instant teleport & focus controls in the God Panel.
+- **Full History Stack (Undo/Redo)**: Integrated linear undo/redo stacks for all star manipulation actions, fully backed by IndexedDB.
+
+**Verification**
+
+- `npm run build` passes with zero errors.
+- All spawn/delete/move/clone actions update the WebGL view in real time and persist per universe in IndexedDB.
+
+---
+
+## ✅ Phase 10 — Full Demo
+
+**Goal:** FULL DEMO — Visible universe, galaxies, solar systems, planets, zoom, search, inspector, timeline, universe manager, god mode. Deployable. The project must already look impressive.
+
+**Delivered**
+
+- **Integrated 3-Tier Dynamic LOD Rendering**: Seamless WebGL transitions from cluster-level galaxy clouds down to individual spectral stars, moving solar-system planetary orbits, and atmospheric halo effects across continuous smooth zoom scales.
+- **Complete Search & Navigation Matrix**: Command palette search (Ctrl/⌘+K, `/`) for stars, galaxies, systems, and planets with instant camera teleportation & focus locks.
+- **Deep Inspector Engine**: Real-time inspection for celestial objects (Galaxies, Stars, Solar Systems, Planets, Moons) showing spectral classes, biomes, equilibrium & greenhouse surface temperatures, habitability scores, and atmospheric compositions.
+- **Timeline & Time Engine**: Play, pause, reverse, step forward/backward, fast-forward, and jump-to-year capabilities running deterministically with real-time orbit animations.
+- **Persistent Local Storage & Universe Manager**: Local IndexedDB database supporting infinite universe creation, seed customization, timeline branching, snapshots, inline renaming, cloning, and deletion.
+- **God-Mode Workspace & Overrides Engine**: Interactive tools for star spawning, repositioning/moving, cloning, multi-deletions, selection set manipulation, and full multi-step undo/redo stack.
+
+**Verification**
+
+- `npm run build` succeeds with zero errors (TypeScript project references + Vite).
+- Production bundle serves static client assets, ready for direct Vercel Free deployment.
+
+---
+
+## ✅ Phase 11 — Resources
+
+**Goal:** Resources — Minerals, Water, Gas, Energy.
+
+**Delivered**
+
+- **`sim/resources.ts`**: Pure deterministic resource generation engine computing planetary abundances (Silicates, Ferrous Metals, Precious Metals, Radioactives/Fissiles, Water Ice, Liquid Water, Hydrocarbons, Hydrogen, Helium, Noble Gases, Solar Irradiance, Geothermal & Wind potential, Fusion fuel).
+- **Resource Deposits Generator**: Procedural generation of localized resource reserve deposits with reserve estimation units, categories, accessibility metrics, and rich physical descriptions.
+- **Inspector Integration**: Extended `PlanetInspector` with a full Resources card breakdown (percentages, meters, irradiance, geothermal rating) and discrete Major Deposits cards.
+
+**Verification**
+
+- `npm run build` succeeds with zero errors (TypeScript project references + Vite).
+- All resource values derive deterministically without backend database requirements.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 7** — Deep planet generator (biome, atmosphere, water, gravity, life
-  probability) on top of the Phase 6 planet base.
+- **Phase 12** — Chemistry engine: Elements, Compounds, Reactions.
 - …through **Phase 40** — production release.

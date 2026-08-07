@@ -145,3 +145,56 @@ export const OpenIcon = (p: IconProps) => (
     <path d="M12 3v12M8 7l4-4 4 4" />
   </svg>
 );
+
+export const ClockIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 7v5l3.5 2" />
+  </svg>
+);
+
+export const FastForwardIcon = (p: IconProps) => (
+  <svg {...base(p)} fill="currentColor" stroke="none">
+    <path d="M4 6l7 6-7 6zM13 6l7 6-7 6z" />
+  </svg>
+);
+
+export const RewindIcon = (p: IconProps) => (
+  <svg {...base(p)} fill="currentColor" stroke="none">
+    <path d="M20 6l-7 6 7 6zM11 6l-7 6 7 6z" />
+  </svg>
+);
+
+export const StepForwardIcon = (p: IconProps) => (
+  <svg {...base(p)} fill="currentColor" stroke="none">
+    <path d="M6 6l8 6-8 6z" />
+    <rect x="16" y="6" width="2.4" height="12" />
+  </svg>
+);
+
+export const StepBackIcon = (p: IconProps) => (
+  <svg {...base(p)} fill="currentColor" stroke="none">
+    <path d="M18 6l-8 6 8 6z" />
+    <rect x="5.6" y="6" width="2.4" height="12" />
+  </svg>
+);
+
+export const UndoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M9 7L4 12l5 5" />
+    <path d="M4 12h11a5 5 0 015 5v1" />
+  </svg>
+);
+
+export const RedoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M15 7l5 5-5 5" />
+    <path d="M20 12H9a5 5 0 00-5 5v1" />
+  </svg>
+);
+
+export const MoveIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
+  </svg>
+);

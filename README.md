@@ -61,8 +61,8 @@ working demo, and *extends* previous work rather than rewriting it. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the module map and
 [`docs/PHASES.md`](docs/PHASES.md) for phase-by-phase status.
 
-**Current status: Phase 6 complete** — everything from Phases 1–5 plus
-**solar systems**: zoom into any star to reveal its planets and moons on
-animated Kepler orbits (they revolve as the simulation clock runs), with
-click-to-select planets/moons and a detailed inspector. Three LOD tiers now
-crossfade smoothly: galaxies → stars → solar systems.
+**Current status: Phase 8 complete** — everything from Phases 1–7 plus a full
+**time engine**: a timeline bar with play/pause, step, rewind, fast-forward,
+speed presets (real-time → 1 year/sec), a live Y·D·HH:MM:SS clock, and
+jump-to-year. Because the cosmos is a pure function of the sim clock, time can
+run forward, backward, be stepped, or jumped — planets orbit as it advances.

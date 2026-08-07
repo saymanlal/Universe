@@ -1,9 +1,10 @@
 import { Rng, combineSeeds } from '@/core/rng';
 import { generateStar, type Star } from '@/sim/star';
 import { galaxyStarDensityAt } from '@/sim/galaxy';
+import { STAR_CHUNK_SIZE } from '@/sim/grid';
+import { isDeleted, spawnsForChunk, getSpawnById, isSpawnedId } from '@/sim/edits';
 
-/** World units per star chunk. Matches the renderer's culling grid. */
-export const STAR_CHUNK_SIZE = 1600;
+export { STAR_CHUNK_SIZE };
 
 const MAX_STARS = 54;
 /** LRU-ish cap on cached chunks to bound memory during long sessions. */
@@ -34,8 +35,8 @@ function starCount(seed: number, cx: number, cy: number): number {
   return Math.max(1, Math.round(density * MAX_STARS * jitter));
 }
 
-/** All stars in a chunk (cached). Deterministic and lazy. */
-export function generateChunkStars(seed: number, cx: number, cy: number): Star[] {
+/** Purely procedural stars in a chunk (cached, deterministic). */
+function proceduralChunkStars(seed: number, cx: number, cy: number): Star[] {
   const key = chunkKey(seed, cx, cy);
   const hit = cache.get(key);
   if (hit) {
@@ -57,6 +58,20 @@ export function generateChunkStars(seed: number, cx: number, cy: number): Star[]
     if (oldest !== undefined) cache.delete(oldest);
   }
   return stars;
+}
+
+/**
+ * All *effective* stars in a chunk: procedural stars minus administrator
+ * deletions, plus administrator-spawned stars in the chunk. The procedural
+ * base stays cached; the (small) edit application runs per call so edits take
+ * effect immediately without cache invalidation.
+ */
+export function generateChunkStars(seed: number, cx: number, cy: number): Star[] {
+  const base = proceduralChunkStars(seed, cx, cy);
+  const spawns = spawnsForChunk(cx, cy);
+  const filtered = base.filter((s) => !isDeleted(s.id));
+  if (spawns.length === 0) return filtered;
+  return filtered.concat(spawns);
 }
 
 /** Clear the cache (e.g. when switching universes). */
@@ -103,8 +118,10 @@ export function nearestStar(
   return best;
 }
 
-/** Resolve a star from its stable id (regenerates its chunk). */
+/** Resolve a star from its stable id (procedural: regenerates; spawned: index). */
 export function findStarById(id: string): Star | null {
+  if (isDeleted(id)) return null;
+  if (isSpawnedId(id)) return getSpawnById(id) ?? null;
   const parts = id.split(':');
   if (parts.length !== 5 || parts[0] !== 'S') return null;
   const seed = Number(parts[1]);
@@ -112,7 +129,7 @@ export function findStarById(id: string): Star | null {
   const cy = Number(parts[3]);
   const i = Number(parts[4]);
   if ([seed, cx, cy, i].some((n) => !Number.isFinite(n))) return null;
-  const stars = generateChunkStars(seed, cx, cy);
+  const stars = proceduralChunkStars(seed, cx, cy);
   return stars[i] ?? null;
 }
 

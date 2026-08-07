@@ -21,7 +21,10 @@ interface UniverseState {
   activeId: string | null;
   camera: Camera;
   time: TimeState;
+  /** Primary selection (last picked) — what the inspector shows. */
   selection: Selection | null;
+  /** Full selection set (supports multi-select). Includes the primary. */
+  selections: Selection[];
   loading: boolean;
 
   // lifecycle
@@ -42,16 +45,21 @@ interface UniverseState {
   // viewport + time (foundations for Phase 2 / Phase 8)
   setCamera: (camera: Partial<Camera>) => void;
   setTime: (time: Partial<TimeState>) => void;
-  /** Advance the active universe's simulation clock by `dt` sim-seconds. */
+  /** Advance the active universe's simulation clock by `dt` sim-seconds (may be negative). */
   advanceTime: (dt: number) => void;
+  /** Jump the active universe's clock to an absolute sim-second value (clamped ≥ 0). */
+  setSimTime: (value: number) => void;
   setSelection: (selection: Selection | null) => void;
+  /** Toggle an entity in the selection set (multi-select). */
+  toggleSelection: (selection: Selection) => void;
+  clearSelection: () => void;
 
   // derived
   active: () => Universe | null;
 }
 
 const DEFAULT_CAMERA: Camera = { x: 0, y: 0, zoom: 1 };
-const DEFAULT_TIME: TimeState = { paused: true, speed: 1 };
+const DEFAULT_TIME: TimeState = { paused: true, speed: 1, reverse: false };
 
 /** Debounced autosave so rapid edits don't hammer IndexedDB. */
 function scheduleAutosave(get: () => UniverseState) {
@@ -78,6 +86,7 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
   camera: { ...DEFAULT_CAMERA },
   time: { ...DEFAULT_TIME },
   selection: null,
+  selections: [],
   loading: true,
 
   init: async () => {
@@ -112,6 +121,7 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
       camera: { ...DEFAULT_CAMERA },
       time: { ...DEFAULT_TIME },
       selection: null,
+      selections: [],
     }));
     return universe;
   },
@@ -173,6 +183,7 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
       camera: { ...DEFAULT_CAMERA },
       time: { ...DEFAULT_TIME },
       selection: null,
+      selections: [],
     });
     await setSetting(ACTIVE_KEY, id);
   },
@@ -196,6 +207,7 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
       universes: [branch, ...s.universes],
       activeId: branch.id,
       selection: null,
+      selections: [],
     }));
     return branch;
   },
@@ -222,17 +234,42 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
   },
 
   advanceTime: (dt) => {
-    if (dt <= 0) return;
+    if (dt === 0) return;
     const { activeId } = get();
     if (!activeId) return;
     set((s) => ({
+      universes: s.universes.map((u) => {
+        if (u.id !== activeId) return u;
+        const next = Math.max(0, u.simTime + dt);
+        if (next === u.simTime) return u;
+        return { ...u, simTime: next, updatedAt: Date.now() };
+      }),
+    }));
+  },
+
+  setSimTime: (value) => {
+    const { activeId } = get();
+    if (!activeId) return;
+    const clamped = Math.max(0, value);
+    set((s) => ({
       universes: s.universes.map((u) =>
-        u.id === activeId ? { ...u, simTime: u.simTime + dt, updatedAt: Date.now() } : u,
+        u.id === activeId ? { ...u, simTime: clamped, updatedAt: Date.now() } : u,
       ),
     }));
   },
 
-  setSelection: (selection) => set({ selection }),
+  setSelection: (selection) => set({ selection, selections: selection ? [selection] : [] }),
+
+  toggleSelection: (selection) =>
+    set((s) => {
+      const exists = s.selections.some((x) => x.id === selection.id);
+      const selections = exists
+        ? s.selections.filter((x) => x.id !== selection.id)
+        : [...s.selections, selection];
+      return { selections, selection: selections[selections.length - 1] ?? null };
+    }),
+
+  clearSelection: () => set({ selection: null, selections: [] }),
 
   active: () => {
     const { activeId, universes } = get();

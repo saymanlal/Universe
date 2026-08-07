@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { Universe } from '@/core/types';
+import type { Star } from '@/sim/star';
 
 /**
  * A stored snapshot of a universe at a point in time. Only the record (seeds,
@@ -22,6 +23,20 @@ export interface KeyValue {
 }
 
 /**
+ * A persisted administrator edit (God-Mode override) for a universe.
+ * `spawn` carries a full star object; `delete` hides a procedural/spawned star.
+ */
+export interface EditRow {
+  id: string;
+  universeId: string;
+  kind: 'spawn' | 'delete';
+  /** For `spawn`: the spawned star. */
+  star?: Star;
+  /** For `delete`: the id of the hidden star. */
+  targetId?: string;
+}
+
+/**
  * The single browser-local database for the whole engine. No backend, no
  * server — everything lives in IndexedDB via Dexie. Later phases add tables
  * here (edits, experiments, history) without altering existing ones.
@@ -30,6 +45,7 @@ export class UniverseDatabase extends Dexie {
   universes!: Table<Universe, string>;
   snapshots!: Table<Snapshot, string>;
   kv!: Table<KeyValue, string>;
+  edits!: Table<EditRow, string>;
 
   constructor() {
     super('universe-engine');
@@ -37,6 +53,10 @@ export class UniverseDatabase extends Dexie {
       universes: 'id, name, updatedAt',
       snapshots: 'id, universeId, createdAt',
       kv: 'key',
+    });
+    // v2 adds the God-Mode edits layer (spawn/delete overrides per universe).
+    this.version(2).stores({
+      edits: 'id, universeId, kind',
     });
   }
 }
@@ -49,10 +69,25 @@ export async function saveUniverse(u: Universe): Promise<void> {
 }
 
 export async function deleteUniverseRecord(id: string): Promise<void> {
-  await db.transaction('rw', db.universes, db.snapshots, async () => {
+  await db.transaction('rw', db.universes, db.snapshots, db.edits, async () => {
     await db.universes.delete(id);
     await db.snapshots.where('universeId').equals(id).delete();
+    await db.edits.where('universeId').equals(id).delete();
   });
+}
+
+// ---- God-Mode edits -------------------------------------------------------
+
+export async function listEdits(universeId: string): Promise<EditRow[]> {
+  return db.edits.where('universeId').equals(universeId).toArray();
+}
+
+export async function putEdit(row: EditRow): Promise<void> {
+  await db.edits.put(row);
+}
+
+export async function deleteEdit(id: string): Promise<void> {
+  await db.edits.delete(id);
 }
 
 export async function listUniverses(): Promise<Universe[]> {

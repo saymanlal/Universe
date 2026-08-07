@@ -20,6 +20,26 @@ export function formatSimTime(seconds: number): string {
   return `Y${formatCompact(y)} · D${d} · ${String(h).padStart(2, '0')}h`;
 }
 
+/** Break simulation seconds into calendar-ish parts for the timeline clock. */
+export interface SimTimeParts {
+  years: number;
+  days: number; // 0..365
+  hours: number; // 0..23
+  minutes: number; // 0..59
+  seconds: number; // 0..59
+}
+
+export function simTimeParts(total: number): SimTimeParts {
+  const t = Math.max(0, Math.floor(total));
+  return {
+    years: Math.floor(t / YEAR_SECONDS),
+    days: Math.floor((t % YEAR_SECONDS) / 86400),
+    hours: Math.floor((t % 86400) / 3600),
+    minutes: Math.floor((t % 3600) / 60),
+    seconds: t % 60,
+  };
+}
+
 export function formatCompact(value: number): string {
   if (!Number.isFinite(value)) return '∞';
   const abs = Math.abs(value);

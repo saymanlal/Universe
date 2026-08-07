@@ -40,11 +40,13 @@ export interface Universe {
   description?: string;
 }
 
-/** Playback state of the time engine (fleshed out in Phase 8). */
+/** Playback state of the time engine. */
 export interface TimeState {
   paused: boolean;
-  /** Simulation seconds advanced per real second. */
+  /** Magnitude of simulation seconds advanced per real second. */
   speed: number;
+  /** When true, the clock runs backwards (deterministic rewind). */
+  reverse: boolean;
 }
 
 /** Kinds of things that can be selected/inspected in the viewport. */

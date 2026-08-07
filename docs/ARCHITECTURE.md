@@ -32,8 +32,10 @@ src/
 │   │                id resolution, bounded search (density driven by galaxies)
 │   ├── galaxy.ts    Galaxies + clusters/voids (region-density noise), LOD
 │   │                statistics, galaxyAt / star-density field
-│   └── planet.ts    Solar systems: planets + moons, Kepler orbits animated by
-│                    the sim clock, id resolution (planet/moon)
+│   ├── planet.ts    Solar systems: planets + moons, Kepler orbits animated by
+│   │                the sim clock, id resolution (planet/moon)
+│   └── planetProfile.ts  Deep planet profile: mass/gravity/rotation,
+│                    atmosphere, water, biome, habitability & life probability
 │
 ├── db/              Persistence (no backend)
 │   └── database.ts  Dexie/IndexedDB schema + universe/snapshot/kv helpers
@@ -63,6 +65,7 @@ src/
 │   ├── InspectorPanel.tsx   Property inspector (delegates by selection kind)
 │   ├── inspectors/          Per-entity inspector bodies (StarInspector…)
 │   ├── SearchPanel.tsx      Command-palette star search
+│   ├── TimelineBar.tsx      Time engine: transport, speed, clock, jump-to
 │   └── UniverseManager.tsx  Create/switch/delete universes
 │
 ├── components/      Shared presentational pieces (icons, boot, empty states)
