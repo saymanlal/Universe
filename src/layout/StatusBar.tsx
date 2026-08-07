@@ -15,6 +15,7 @@ export function StatusBar() {
   const fps = useStatsStore((s) => s.fps);
   const drawn = useStatsStore((s) => s.drawn);
   const cursor = useStatsStore((s) => s.cursor);
+  const region = useStatsStore((s) => s.region);
   const camera = useUniverseStore((s) => s.camera);
   const active = useUniverseStore((s) => s.active());
 
@@ -30,7 +31,12 @@ export function StatusBar() {
       <span>
         x {cursor ? fmt(cursor.x) : '—'} &nbsp; y {cursor ? fmt(cursor.y) : '—'}
       </span>
-      <span>zoom {camera.zoom.toFixed(3)}×</span>
+      <span>zoom {camera.zoom < 0.01 ? camera.zoom.toExponential(1) : camera.zoom.toFixed(3)}×</span>
+      {active && region && (
+        <span className="flex items-center gap-1 text-nebula-cyan/80" title="Region under camera">
+          ◍ {region}
+        </span>
+      )}
       <div className="ml-auto flex items-center gap-4">
         {active && <span>seed {active.seed.toString(16)}</span>}
         {active && <span className="text-accent-soft">{formatSimTime(active.simTime)}</span>}

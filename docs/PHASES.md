@@ -127,7 +127,43 @@ inspectable.
 
 ---
 
+## ✅ Phase 5 — Galaxy Generation, Clusters & LOD
+
+**Goal:** Galaxy generation, clusters, galaxy names, galaxy statistics, zoom
+transitions, LOD rendering.
+
+**Delivered**
+
+- **`sim/galaxy.ts`** — deterministic galaxies on a coarse grid (spiral /
+  elliptical / irregular), each with radius, eccentricity, rotation, arm count,
+  colours, a catalog designation and proper names. A smooth **region-density
+  value-noise field** modulates whether cells host galaxies, producing
+  **clusters and voids**. A forced "Genesis" home galaxy is centred on the
+  origin so fresh universes open inside a rich field.
+- **Galaxies shape the star field** — `galaxyStarDensityAt` drives
+  `starfield.starCount`, so stars concentrate inside galaxies (denser toward the
+  core) and intergalactic space is nearly empty.
+- **LOD + zoom transitions** — the renderer crossfades between a **galaxy view**
+  (blob visuals: spiral arms / elliptical clouds / irregular clumps) when zoomed
+  out and the **star view** when zoomed in (`canvas/viewport.ts` `starDetail`
+  smoothstep). Each layer is skipped/cleared outside its band to bound object
+  counts; zoom range widened so whole galaxies/clusters are visible.
+- **Selection is LOD-aware** — clicking selects galaxies when zoomed out (ring
+  sized to the galaxy) and stars when zoomed in.
+- **Galaxy statistics** — a `GalaxyInspector` (type, diameter, ellipticity,
+  arms, estimated stars, centre) with a "Frame galaxy" button; the status bar
+  shows the **current region** (galaxy under the camera, or "Intergalactic
+  space").
+
+**Verification**
+
+- `npm run build` passes; galaxies cluster, crossfade to stars on zoom, are
+  selectable/inspectable, all deterministic and storage-free. Vercel Free
+  unchanged.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 5** — Galaxy generation, clusters, LOD, zoom transitions.
+- **Phase 6** — Solar systems: stars → planets → moons, orbital paths, inspector.
 - …through **Phase 40** — production release.

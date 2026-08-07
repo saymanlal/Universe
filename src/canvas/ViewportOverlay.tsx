@@ -1,4 +1,5 @@
 import { useUniverseStore } from '@/state/useUniverseStore';
+import { clampZoom } from '@/canvas/viewport';
 import { HomeIcon, PlusIcon, GridIcon } from '@/components/icons';
 
 /**
@@ -9,8 +10,7 @@ export function ViewportOverlay() {
   const camera = useUniverseStore((s) => s.camera);
   const setCamera = useUniverseStore((s) => s.setCamera);
 
-  const zoomBy = (factor: number) =>
-    setCamera({ zoom: Math.min(24, Math.max(0.04, camera.zoom * factor)) });
+  const zoomBy = (factor: number) => setCamera({ zoom: clampZoom(camera.zoom * factor) });
 
   return (
     <div className="pointer-events-none absolute inset-0">
@@ -34,7 +34,9 @@ export function ViewportOverlay() {
           <PlusIcon width={16} height={16} />
         </button>
         <div className="px-1 text-center font-mono text-[10px] text-space-400">
-          {Math.round(camera.zoom * 100)}%
+          {camera.zoom >= 0.1
+            ? `${Math.round(camera.zoom * 100)}%`
+            : `${camera.zoom.toExponential(0)}×`}
         </div>
         <button className="btn btn-icon" title="Zoom out" onClick={() => zoomBy(1 / 1.3)}>
           <GridIcon width={16} height={16} />

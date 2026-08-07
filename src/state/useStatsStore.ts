@@ -20,12 +20,15 @@ interface StatsState {
   view: Camera;
   /** Main viewport size in CSS pixels (for mini-map viewport-rect math). */
   viewport: { w: number; h: number };
+  /** Galaxy (or "Intergalactic space") under the camera centre. */
+  region: string | null;
 
   setFps: (fps: number) => void;
   setCursor: (cursor: { x: number; y: number } | null) => void;
   setDrawn: (drawn: number) => void;
   setView: (view: Camera) => void;
   setViewport: (viewport: { w: number; h: number }) => void;
+  setRegion: (region: string | null) => void;
 }
 
 export const useStatsStore = create<StatsState>((set) => ({
@@ -34,9 +37,11 @@ export const useStatsStore = create<StatsState>((set) => ({
   drawn: 0,
   view: { x: 0, y: 0, zoom: 1 },
   viewport: { w: 1, h: 1 },
+  region: null,
   setFps: (fps) => set({ fps }),
   setCursor: (cursor) => set({ cursor }),
   setDrawn: (drawn) => set({ drawn }),
   setView: (view) => set({ view }),
   setViewport: (viewport) => set({ viewport }),
+  setRegion: (region) => set({ region }),
 }));

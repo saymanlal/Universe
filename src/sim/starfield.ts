@@ -1,11 +1,11 @@
 import { Rng, combineSeeds } from '@/core/rng';
 import { generateStar, type Star } from '@/sim/star';
+import { galaxyStarDensityAt } from '@/sim/galaxy';
 
 /** World units per star chunk. Matches the renderer's culling grid. */
 export const STAR_CHUNK_SIZE = 1600;
 
-const MIN_STARS = 16;
-const MAX_STARS = 52;
+const MAX_STARS = 54;
 /** LRU-ish cap on cached chunks to bound memory during long sessions. */
 const CACHE_LIMIT = 800;
 
@@ -15,12 +15,23 @@ function chunkKey(seed: number, cx: number, cy: number): string {
   return `${seed}:${cx}:${cy}`;
 }
 
-/** Number of stars in a chunk (deterministic; density varies by region). */
+/**
+ * Number of stars in a chunk (deterministic). Density is driven by galactic
+ * structure: chunks inside galaxies are rich (denser toward the core), while
+ * intergalactic space is nearly empty.
+ */
 function starCount(seed: number, cx: number, cy: number): number {
+  const wx = (cx + 0.5) * STAR_CHUNK_SIZE;
+  const wy = (cy + 0.5) * STAR_CHUNK_SIZE;
+  const density = galaxyStarDensityAt(seed, wx, wy);
   const rng = new Rng(combineSeeds(seed, cx, cy, 0xc0117));
-  // Slight clustering: square the roll so most chunks are sparse-to-medium.
-  const t = rng.next() * rng.next();
-  return Math.round(MIN_STARS + t * (MAX_STARS - MIN_STARS));
+
+  if (density <= 0) {
+    // Rare intergalactic stragglers keep the void from looking totally dead.
+    return rng.next() < 0.12 ? 1 : 0;
+  }
+  const jitter = 0.7 + rng.next() * 0.3;
+  return Math.max(1, Math.round(density * MAX_STARS * jitter));
 }
 
 /** All stars in a chunk (cached). Deterministic and lazy. */

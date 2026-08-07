@@ -1,4 +1,5 @@
 import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Rng, combineSeeds } from '@/core/rng';
 import { formatCompact } from '@/core/format';
 import type { Camera } from '@/core/types';
 import {
@@ -7,16 +8,25 @@ import {
   clearStarCache,
   nearestStar,
 } from '@/sim/starfield';
+import {
+  galaxiesInRect,
+  galaxyAt,
+  findGalaxyById,
+  clearGalaxyCache,
+  type Galaxy,
+} from '@/sim/galaxy';
+import { ZOOM_MIN, ZOOM_MAX, starDetail } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { useStatsStore } from '@/state/useStatsStore';
 
 /** World units per star chunk (shared with the star field generator). */
 const CHUNK_SIZE = STAR_CHUNK_SIZE;
 /** Hard cap so extreme zoom-out never explodes the object count. */
-const MAX_VISIBLE_CHUNKS = 600;
-
-const ZOOM_MIN = 0.04;
-const ZOOM_MAX = 24;
+const MAX_VISIBLE_CHUNKS = 520;
+/** Hard cap on galaxy display objects at once. */
+const MAX_VISIBLE_GALAXIES = 300;
+/** Below this star-detail the star layer is skipped entirely (LOD). */
+const STAR_LAYER_MIN_ALPHA = 0.02;
 
 /** Camera easing stiffness (higher = snappier). Exponential smoothing. */
 const CAM_STIFFNESS = 16;
@@ -47,6 +57,7 @@ const GLOW_MIN_RADIUS = 2.2;
 export class Renderer {
   private app: Application;
   private world = new Container();
+  private galaxyLayer = new Container();
   private starLayer = new Container();
   private gridG = new Graphics();
   private markerG = new Graphics();
@@ -54,6 +65,8 @@ export class Renderer {
   private labelLayer = new Container();
   private labelPool: Text[] = [];
   private chunks = new Map<string, Container>();
+  private galaxyObjs = new Map<string, Container>();
+  private lastRegion: string | null = null;
 
   private seed = 0;
   private disposed = false;
@@ -75,6 +88,7 @@ export class Renderer {
   private downAt: { x: number; y: number } | null = null;
   private movedSinceDown = false;
   private drawnStars = 0;
+  private drawnGalaxies = 0;
 
   // fps sampling
   private fpsAccum = 0;
@@ -102,8 +116,9 @@ export class Renderer {
     this.app.canvas.style.width = '100%';
     this.app.canvas.style.height = '100%';
 
-    // Draw order: grid (back) -> stars -> selection -> marker, in scaled world.
+    // Draw order: grid -> galaxies -> stars -> selection -> marker (scaled world).
     this.world.addChild(this.gridG);
+    this.world.addChild(this.galaxyLayer);
     this.world.addChild(this.starLayer);
     this.world.addChild(this.selectionG);
     this.world.addChild(this.markerG);
@@ -120,7 +135,10 @@ export class Renderer {
       if (nextSeed !== this.seed) {
         this.seed = nextSeed;
         clearStarCache();
+        clearGalaxyCache();
         this.clearChunks();
+        this.clearGalaxies();
+        this.lastRegion = null;
       }
     });
 
@@ -251,12 +269,27 @@ export class Renderer {
     }
   };
 
-  /** Hit-test the star field at a screen point and update the selection. */
+  /** Hit-test the scene at a screen point and update the selection (LOD-aware). */
   private selectAt(sx: number, sy: number) {
     const w = this.screenToWorld(sx, sy, this.display);
-    // ~12px pick radius, expressed in world units at the current zoom.
-    const star = nearestStar(this.seed, w.x, w.y, 12 / this.display.zoom);
     const store = useUniverseStore.getState();
+    const detail = starDetail(this.display.zoom);
+
+    // Zoomed out → galaxies; zoomed in → stars. Each falls back to the other.
+    if (detail < 0.5) {
+      const g = galaxyAt(this.seed, w.x, w.y);
+      if (g) {
+        store.setSelection({
+          kind: 'galaxy',
+          id: g.id,
+          label: g.name ?? g.designation,
+          position: { x: g.x, y: g.y },
+        });
+        return;
+      }
+    }
+
+    const star = nearestStar(this.seed, w.x, w.y, 12 / this.display.zoom);
     if (star) {
       store.setSelection({
         kind: 'star',
@@ -328,11 +361,36 @@ export class Renderer {
       this.screenH / 2 - cam.y * cam.zoom,
     );
 
-    this.updateStarfield(cam);
+    // Level of detail: crossfade between the galaxy view and the star view.
+    const detail = starDetail(cam.zoom);
+    this.starLayer.alpha = detail;
+    this.galaxyLayer.alpha = 1 - detail;
+
+    if (detail > STAR_LAYER_MIN_ALPHA) {
+      this.starLayer.visible = true;
+      this.updateStarfield(cam);
+    } else {
+      this.starLayer.visible = false;
+      if (this.chunks.size) this.clearChunks();
+      this.drawnStars = 0;
+    }
+
+    if (detail < 1 - STAR_LAYER_MIN_ALPHA) {
+      this.galaxyLayer.visible = true;
+      this.updateGalaxies(cam);
+    } else {
+      this.galaxyLayer.visible = false;
+      if (this.galaxyObjs.size) this.clearGalaxies();
+      this.drawnGalaxies = 0;
+    }
+
     this.drawGrid(cam);
     this.drawMarker();
     this.drawSelection(cam);
     this.drawLabels(cam);
+    this.updateRegion(cam);
+
+    useStatsStore.getState().setDrawn(detail >= 0.5 ? this.drawnStars : this.drawnGalaxies);
 
     // Publish the smoothed camera for the mini-map / HUD (imperative, no re-render).
     useStatsStore.getState().setView({ ...cam });
@@ -407,8 +465,6 @@ export class Renderer {
         this.chunks.delete(key);
       }
     }
-
-    useStatsStore.getState().setDrawn(this.drawnStars);
   }
 
   private clearChunks() {
@@ -417,6 +473,117 @@ export class Renderer {
       chunk.destroy({ children: true });
     }
     this.chunks.clear();
+  }
+
+  // ---- galaxies (LOD, culled, cached, deterministic) ----------------------
+
+  private buildGalaxyVisual(g: Galaxy): Container {
+    const container = new Container();
+    container.position.set(g.x, g.y);
+    container.rotation = g.rotation;
+
+    const gfx = new Graphics();
+    const r = g.radius;
+    const ecc = g.eccentricity;
+
+    // Faint disk halo.
+    gfx.ellipse(0, 0, r, r * ecc).fill({ color: g.color, alpha: 0.06 });
+    // Core glow.
+    gfx.circle(0, 0, r * 0.16).fill({ color: g.coreColor, alpha: 0.5 });
+    gfx.circle(0, 0, r * 0.07).fill({ color: 0xffffff, alpha: 0.85 });
+
+    const rng = new Rng(combineSeeds(g.cell.gx, g.cell.gy, 0x9a1a));
+
+    if (g.type === 'spiral') {
+      const turns = 2.2;
+      const dots = 170;
+      for (let i = 0; i < dots; i++) {
+        const arm = i % g.armCount;
+        const t = i / dots;
+        const ang =
+          t * turns * Math.PI * 2 +
+          (arm * Math.PI * 2) / g.armCount +
+          rng.gaussian(0, 0.12);
+        const rad = t * r * (0.9 + rng.gaussian(0, 0.06));
+        const x = Math.cos(ang) * rad;
+        const y = Math.sin(ang) * rad * ecc;
+        const a = (1 - t) * 0.7 + 0.1;
+        gfx.circle(x, y, r * 0.012 + (1 - t) * r * 0.01).fill({ color: g.color, alpha: a });
+      }
+    } else if (g.type === 'elliptical') {
+      const dots = 150;
+      for (let i = 0; i < dots; i++) {
+        const rad = Math.min(1, Math.abs(rng.gaussian(0, 0.42))) * r;
+        const ang = rng.float(0, Math.PI * 2);
+        const x = Math.cos(ang) * rad;
+        const y = Math.sin(ang) * rad * ecc;
+        gfx.circle(x, y, r * 0.014).fill({ color: g.color, alpha: 0.5 - (rad / r) * 0.35 });
+      }
+    } else {
+      // Irregular: a few offset clumps.
+      const clumps = 5;
+      for (let c = 0; c < clumps; c++) {
+        const cxp = rng.float(-0.5, 0.5) * r;
+        const cyp = rng.float(-0.5, 0.5) * r * ecc;
+        for (let i = 0; i < 30; i++) {
+          const x = cxp + rng.gaussian(0, r * 0.18);
+          const y = cyp + rng.gaussian(0, r * 0.18);
+          gfx.circle(x, y, r * 0.016).fill({ color: g.color, alpha: 0.4 });
+        }
+      }
+    }
+
+    container.addChild(gfx);
+    return container;
+  }
+
+  private updateGalaxies(cam: Camera) {
+    const halfW = this.screenW / 2 / cam.zoom;
+    const halfH = this.screenH / 2 / cam.zoom;
+    const galaxies = galaxiesInRect(
+      this.seed,
+      cam.x - halfW,
+      cam.y - halfH,
+      cam.x + halfW,
+      cam.y + halfH,
+      MAX_VISIBLE_GALAXIES,
+    );
+
+    const wanted = new Set<string>();
+    for (const g of galaxies) {
+      wanted.add(g.id);
+      if (!this.galaxyObjs.has(g.id)) {
+        const obj = this.buildGalaxyVisual(g);
+        this.galaxyObjs.set(g.id, obj);
+        this.galaxyLayer.addChild(obj);
+      }
+    }
+    for (const [id, obj] of this.galaxyObjs) {
+      if (!wanted.has(id)) {
+        this.galaxyLayer.removeChild(obj);
+        obj.destroy({ children: true });
+        this.galaxyObjs.delete(id);
+      }
+    }
+    this.drawnGalaxies = this.galaxyObjs.size;
+  }
+
+  private clearGalaxies() {
+    for (const [, obj] of this.galaxyObjs) {
+      this.galaxyLayer.removeChild(obj);
+      obj.destroy({ children: true });
+    }
+    this.galaxyObjs.clear();
+  }
+
+  /** Publish the galaxy under the camera centre as the current "region". */
+  private updateRegion(cam: Camera) {
+    const g = galaxyAt(this.seed, cam.x, cam.y);
+    const region = g ? (g.name ?? g.designation) : 'Intergalactic space';
+    if (region !== this.lastRegion) {
+      this.lastRegion = region;
+      useStatsStore.getState().setRegion(region);
+    }
   }
 
   // ---- adaptive grid ------------------------------------------------------
@@ -485,7 +652,14 @@ export class Renderer {
     g.clear();
     const sel = useUniverseStore.getState().selection;
     if (!sel?.position) return;
-    const r = 14 / cam.zoom;
+
+    // Galaxy selections ring the whole galaxy; point entities use a fixed
+    // on-screen size.
+    let r = 14 / cam.zoom;
+    if (sel.kind === 'galaxy') {
+      const gal = findGalaxyById(sel.id);
+      if (gal) r = gal.radius * 1.12;
+    }
     const lw = 1.5 / cam.zoom;
     g.circle(sel.position.x, sel.position.y, r).stroke({
       width: lw,
@@ -568,6 +742,7 @@ export class Renderer {
     this.unsubscribe?.();
     this.unbindEvents();
     this.clearChunks();
+    this.clearGalaxies();
     this.app.ticker.remove(this.onTick);
     try {
       this.app.destroy(true, { children: true });

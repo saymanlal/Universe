@@ -28,8 +28,10 @@ src/
 │
 ├── sim/             Deterministic procedural generation (pure, on demand)
 │   ├── star.ts      Star model + generation (spectral class, T→colour…)
-│   └── starfield.ts Chunked/cached star field: region query, nearest-hit,
-│                    id resolution, bounded search
+│   ├── starfield.ts Chunked/cached star field: region query, nearest-hit,
+│   │                id resolution, bounded search (density driven by galaxies)
+│   └── galaxy.ts    Galaxies + clusters/voids (region-density noise), LOD
+│                    statistics, galaxyAt / star-density field
 │
 ├── db/              Persistence (no backend)
 │   └── database.ts  Dexie/IndexedDB schema + universe/snapshot/kv helpers
@@ -41,7 +43,8 @@ src/
 │   └── useTimeEngine.ts     rAF loop advancing the simulation clock
 │
 ├── canvas/          PixiJS rendering
-│   ├── Renderer.ts          WebGL app, eased camera, starfield, grid + labels
+│   ├── Renderer.ts          WebGL app, eased camera, galaxy+star LOD, grid
+│   ├── viewport.ts          Shared zoom bounds + LOD crossfade (no PixiJS dep)
 │   ├── UniverseCanvas.tsx   React host for the renderer
 │   ├── ViewportOverlay.tsx  Floating HUD (zoom / home / controls legend)
 │   └── MiniMap.tsx          2D-canvas radar + click-to-teleport
