@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { resolveOrbitId, planetTypeLabel } from '@/sim/planet';
 import { computeProfile } from '@/sim/planetProfile';
+import { generatePlanetaryChemistry } from '@/core/chemistry';
 import { formatCompact, YEAR_SECONDS } from '@/core/format';
 import { SYS_FRAME } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
@@ -193,6 +194,53 @@ export function PlanetInspector({ id }: { id: string }) {
               <Stat label="Hydrogen / Helium" value={`${Math.round((profile.resources.gases.hydrogen + profile.resources.gases.helium) * 100)}%`} />
               <Stat label="Solar Irradiance" value={formatCompact(profile.resources.energy.solarIrradiance)} unit="W/m²" />
               <Stat label="Geothermal Potential" value={String(profile.resources.energy.geothermalEnergy)} unit="/100" />
+            </Card>
+
+            <SectionTitle>Chemistry & Compounds</SectionTitle>
+            <Card>
+              <div className="mb-2 text-[11px] font-medium text-space-300">Elemental Abundance</div>
+              <div className="grid grid-cols-2 gap-1.5 mb-3">
+                {generatePlanetaryChemistry(planet, profile).elements.slice(0, 6).map((el) => (
+                  <div key={el.symbol} className="flex items-center justify-between rounded bg-space-900/60 px-2 py-1 border border-space-700/50">
+                    <span className="font-mono text-xs font-semibold" style={{ color: el.color }}>
+                      {el.symbol} <span className="text-[10px] text-space-400 font-normal">{el.name}</span>
+                    </span>
+                    <span className="font-mono text-xs text-space-300">{(el.abundance * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mb-2 text-[11px] font-medium text-space-300">Primary Compounds</div>
+              <div className="flex flex-col gap-1.5 mb-3">
+                {generatePlanetaryChemistry(planet, profile).compounds.map((cmp) => (
+                  <div key={cmp.formula} className="flex flex-col rounded bg-space-900/40 px-2 py-1 border border-space-700/40">
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-mono text-xs text-accent font-semibold">{cmp.formula} <span className="text-[11px] text-space-300 font-normal">({cmp.name})</span></span>
+                      <span className="font-mono text-[10px] text-space-400 uppercase">{cmp.state} · {(cmp.fraction * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="text-[10px] text-space-500 mt-0.5">{cmp.description}</div>
+                  </div>
+                ))}
+              </div>
+
+              {generatePlanetaryChemistry(planet, profile).reactions.length > 0 && (
+                <>
+                  <div className="mb-2 text-[11px] font-medium text-space-300">Active Chemical Reactions</div>
+                  <div className="flex flex-col gap-1.5">
+                    {generatePlanetaryChemistry(planet, profile).reactions.map((rxn) => (
+                      <div key={rxn.id} className="flex flex-col rounded bg-space-900/40 px-2 py-1.5 border border-space-700/40">
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className="text-xs text-space-200 font-medium">{rxn.name}</span>
+                          <span className="text-[9px] font-mono px-1 rounded bg-space-800 text-space-400 uppercase">{rxn.energyDelta}</span>
+                        </div>
+                        <div className="font-mono text-[11px] text-accent/90">
+                          {rxn.reactants.join(' + ')} ➔ {rxn.products.join(' + ')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </Card>
 
             {profile.resources.deposits.length > 0 && (
