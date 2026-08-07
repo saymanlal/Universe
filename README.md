@@ -61,7 +61,7 @@ working demo, and *extends* previous work rather than rewriting it. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the module map and
 [`docs/PHASES.md`](docs/PHASES.md) for phase-by-phase status.
 
-**Current status: Phase 2 complete** — everything from Phase 1 plus an infinite
-2D camera with smooth eased motion, keyboard navigation (WASD/arrows/zoom/home),
-a coordinate grid with live world-coordinate labels, and a click-to-teleport
-mini-map radar.
+**Current status: Phase 3 complete** — everything from Phases 1–2 plus a full
+Universe Manager: rich cards (universe + timeline seeds, sim clock, snapshot
+count), inline rename, duplicate, delete-with-confirm, search, sort, a seed
+randomizer, and a live seed preview. All persisted locally in IndexedDB.

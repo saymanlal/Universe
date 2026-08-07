@@ -59,6 +59,16 @@ export async function listUniverses(): Promise<Universe[]> {
   return db.universes.orderBy('updatedAt').reverse().toArray();
 }
 
+/** Count snapshots grouped by universe id (for manager cards). */
+export async function snapshotCounts(): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  await db.snapshots.orderBy('universeId').eachKey((key) => {
+    const id = String(key);
+    counts[id] = (counts[id] ?? 0) + 1;
+  });
+  return counts;
+}
+
 /** Read a single key/value setting, with a typed fallback. */
 export async function getSetting<T>(key: string, fallback: T): Promise<T> {
   const row = await db.kv.get(key);

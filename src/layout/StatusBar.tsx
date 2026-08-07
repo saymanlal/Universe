@@ -1,16 +1,9 @@
 import { useStatsStore } from '@/state/useStatsStore';
 import { useUniverseStore } from '@/state/useUniverseStore';
+import { formatSimTime } from '@/core/format';
 
 function fmt(n: number): string {
   return n.toLocaleString('en-US', { maximumFractionDigits: 1 });
-}
-
-/** Formats simulation seconds into a compact Y/D/H clock. */
-function formatSimTime(seconds: number): string {
-  const y = Math.floor(seconds / 31557600);
-  const d = Math.floor((seconds % 31557600) / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  return `Y${y} · D${d} · ${String(h).padStart(2, '0')}h`;
 }
 
 /**

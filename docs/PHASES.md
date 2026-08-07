@@ -67,8 +67,35 @@ rendering.
 
 ---
 
+## ✅ Phase 3 — Universe Manager
+
+**Goal:** Full universe management — create, delete, rename, cards, universe
+seed, timeline seed, persist locally.
+
+**Delivered**
+
+- Rich **universe cards**: icon, name, universe seed + timeline seed (mono),
+  last-edited date, sim-clock, snapshot count, and an active badge.
+- **Inline rename** (double-click the name or the pencil action; Enter commits,
+  Esc cancels).
+- **Duplicate** (full independent copy — same cosmos + timeline) distinct from
+  the God panel's timeline-branch (same cosmos, new timeline).
+- **Delete with in-card confirmation** (no accidental universe loss); deleting a
+  universe also removes its snapshots.
+- **Search** by name or seed, and **sort** by last-edited / created / name.
+- **Create form** upgraded: seed randomizer (🎲) and a live seed preview showing
+  the exact `0x…` value a word/number resolves to (`core/parseSeedInput`, pure).
+- Snapshot counts loaded from IndexedDB via an index-only key scan.
+- Shared `formatSimTime` extracted to `core/format.ts` (status bar reuses it).
+
+**Verification**
+
+- `npm run build` passes; manager create/rename/duplicate/delete all persist to
+  IndexedDB and survive reload. Static SPA → deploys to Vercel Free unchanged.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 3** — Full universe manager (rename inline, cards, metadata).
 - **Phase 4** — Procedural star generation (visible, infinite, searchable).
 - …through **Phase 40** — production release.

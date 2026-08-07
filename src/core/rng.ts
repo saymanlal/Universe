@@ -52,6 +52,22 @@ export function combineSeeds(...seeds: number[]): number {
 }
 
 /**
+ * Interpret administrator seed input. A bare integer is used directly; any
+ * other phrase is hashed into a 32-bit seed. Empty input returns null so the
+ * caller can substitute a fresh random seed. Pure, so the UI can preview the
+ * exact seed a phrase will produce.
+ */
+export function parseSeedInput(text: string): number | null {
+  const t = text.trim();
+  if (t === '') return null;
+  const asNum = Number(t);
+  if (Number.isFinite(asNum) && Number.isInteger(asNum)) {
+    return (Math.abs(asNum) >>> 0) || hashString(t);
+  }
+  return hashString(t);
+}
+
+/**
  * A small, fast, seedable PRNG (mulberry32).
  * Not cryptographic — chosen for speed and reproducibility.
  */

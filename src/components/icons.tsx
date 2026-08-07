@@ -114,3 +114,34 @@ export const WandIcon = (p: IconProps) => (
     <path d="M15 4V2M15 10V8M12 6h2M18 6h-2M6 20l9-9M17 12l1.5 1.5" />
   </svg>
 );
+
+export const CopyIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V5a2 2 0 012-2h10" />
+  </svg>
+);
+
+export const PencilIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 20h4l10-10a1.5 1.5 0 000-2l-2-2a1.5 1.5 0 00-2 0L4 16v4z" />
+    <path d="M13.5 6.5l4 4" />
+  </svg>
+);
+
+export const DiceIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="4" y="4" width="16" height="16" rx="3" />
+    <circle cx="9" cy="9" r="1" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="15" r="1" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="9" r="1" fill="currentColor" stroke="none" />
+    <circle cx="9" cy="15" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const OpenIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M5 12v7a1 1 0 001 1h12a1 1 0 001-1v-7" />
+    <path d="M12 3v12M8 7l4-4 4 4" />
+  </svg>
+);

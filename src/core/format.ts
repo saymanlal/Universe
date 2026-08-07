@@ -9,6 +9,17 @@ const UNITS: [number, string][] = [
   [1e3, 'k'],
 ];
 
+/** Julian year in seconds — the sim clock's canonical year length. */
+export const YEAR_SECONDS = 31_557_600;
+
+/** Format simulation seconds as a compact "Y# · D# · ##h" clock. */
+export function formatSimTime(seconds: number): string {
+  const y = Math.floor(seconds / YEAR_SECONDS);
+  const d = Math.floor((seconds % YEAR_SECONDS) / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  return `Y${formatCompact(y)} · D${d} · ${String(h).padStart(2, '0')}h`;
+}
+
 export function formatCompact(value: number): string {
   if (!Number.isFinite(value)) return '∞';
   const abs = Math.abs(value);

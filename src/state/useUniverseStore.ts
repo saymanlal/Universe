@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Camera, Selection, TimeState, Universe } from '@/core/types';
 import { createId } from '@/core/ids';
-import { hashString } from '@/core/rng';
+import { hashString, parseSeedInput } from '@/core/rng';
 import {
   db,
   deleteUniverseRecord,
@@ -32,6 +32,7 @@ interface UniverseState {
   deleteUniverse: (id: string) => Promise<void>;
   renameUniverse: (id: string, name: string) => Promise<void>;
   setDescription: (id: string, description: string) => Promise<void>;
+  duplicateUniverse: (id: string) => Promise<Universe | null>;
   setActive: (id: string | null) => Promise<void>;
 
   // experiments (foundations for Phase 28 timeline branching)
@@ -68,11 +69,7 @@ function formatSimTimeShort(seconds: number): string {
 }
 
 function seedFromText(text: string | undefined): number {
-  const t = (text ?? '').trim();
-  if (t === '') return hashString(createId('seed'));
-  // Allow entering a raw number directly, otherwise hash the phrase.
-  const asNum = Number(t);
-  return Number.isFinite(asNum) && t !== '' ? (Math.abs(Math.trunc(asNum)) >>> 0) || hashString(t) : hashString(t);
+  return parseSeedInput(text ?? '') ?? hashString(createId('seed'));
 }
 
 export const useUniverseStore = create<UniverseState>((set, get) => ({
@@ -151,6 +148,23 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
     }));
     const u = get().universes.find((x) => x.id === id);
     if (u) await saveUniverse(u);
+  },
+
+  duplicateUniverse: async (id) => {
+    const source = get().universes.find((u) => u.id === id);
+    if (!source) return null;
+    const now = Date.now();
+    // A full copy: identical cosmos AND timeline, independent record.
+    const copy: Universe = {
+      ...source,
+      id: createId('uni'),
+      name: `${source.name} (copy)`,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await saveUniverse(copy);
+    set((s) => ({ universes: [copy, ...s.universes] }));
+    return copy;
   },
 
   setActive: async (id) => {
