@@ -34,9 +34,41 @@ resizable panels, universe canvas, God panel, Vercel-deployable working demo.
 
 ---
 
+## ✅ Phase 2 — Infinite Camera, Mini-map & Coordinate Grid
+
+**Goal:** Infinite 2D camera, pan, zoom, mini-map, coordinate grid, smooth
+rendering.
+
+**Delivered**
+
+- **Smoothed display camera:** the renderer now eases a display camera toward
+  the store target with exponential smoothing (zoom eased in log space), so
+  wheel zoom, teleports, and keyboard moves glide. Dragging bypasses easing for
+  a 1:1 feel. This is the "smooth rendering" requirement.
+- **Keyboard navigation:** WASD / arrow keys pan (speed scales with zoom),
+  `+`/`-` zoom, `0`/`Home` recenter to genesis. Ignored while typing in fields.
+- **Zoom-to-cursor** now anchors on the displayed camera so the point under the
+  pointer stays fixed even mid-ease.
+- **Coordinate grid labels:** pooled, screen-space `Text` labels along the top
+  and left edges show world coordinates at each grid line (compact k/M/G
+  formatting via `core/format.ts`), staying pixel-crisp at any zoom.
+- **Mini-map (radar):** a self-contained 2D-canvas overlay with its own draw
+  loop (no React re-renders). Shows a deterministic star field echo, the
+  genesis point, and a live viewport rectangle; click or drag to teleport (the
+  main camera eases to the target).
+- **Controls legend** overlay for discoverability.
+
+**Verification**
+
+- `npm run build` passes (tsc project refs + Vite), no errors.
+- Pan (drag + keyboard), zoom (wheel + buttons + keys), grid + labels, and the
+  mini-map all update at 60 FPS; teleport eases smoothly.
+- Still a static SPA — deploys to Vercel Free unchanged.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 2** — Infinite camera polish, mini-map, coordinate readouts.
 - **Phase 3** — Full universe manager (rename inline, cards, metadata).
 - **Phase 4** — Procedural star generation (visible, infinite, searchable).
 - …through **Phase 40** — production release.

@@ -14,6 +14,21 @@ export function ViewportOverlay() {
 
   return (
     <div className="pointer-events-none absolute inset-0">
+      <div className="absolute bottom-3 left-3 hidden select-none gap-3 rounded-md border border-space-700 bg-space-850/80 px-2.5 py-1.5 font-mono text-[10px] text-space-500 backdrop-blur sm:flex">
+        <span>
+          <span className="kbd">drag</span> pan
+        </span>
+        <span>
+          <span className="kbd">WASD</span> move
+        </span>
+        <span>
+          <span className="kbd">scroll</span> zoom
+        </span>
+        <span>
+          <span className="kbd">0</span> home
+        </span>
+      </div>
+
       <div className="pointer-events-auto absolute bottom-3 right-3 flex flex-col gap-1 rounded-lg border border-space-700 bg-space-850/90 p-1 backdrop-blur">
         <button className="btn btn-icon" title="Zoom in" onClick={() => zoomBy(1.3)}>
           <PlusIcon width={16} height={16} />

@@ -23,6 +23,7 @@ src/
 ├── core/            Pure, framework-free engine primitives
 │   ├── rng.ts       Deterministic PRNG + hashing + seed combination
 │   ├── ids.ts       Unique ids for persisted records
+│   ├── format.ts    Compact number formatting (k/M/G) for HUD labels
 │   └── types.ts     Shared domain types (Universe, Camera, Selection…)
 │
 ├── db/              Persistence (no backend)
@@ -35,9 +36,10 @@ src/
 │   └── useTimeEngine.ts     rAF loop advancing the simulation clock
 │
 ├── canvas/          PixiJS rendering
-│   ├── Renderer.ts          WebGL app, camera, chunked starfield, grid
+│   ├── Renderer.ts          WebGL app, eased camera, starfield, grid + labels
 │   ├── UniverseCanvas.tsx   React host for the renderer
-│   └── ViewportOverlay.tsx  Floating HUD (zoom / home)
+│   ├── ViewportOverlay.tsx  Floating HUD (zoom / home / controls legend)
+│   └── MiniMap.tsx          2D-canvas radar + click-to-teleport
 │
 ├── layout/          Workspace shell
 │   ├── DockLayout.tsx   Toolbar + resizable docks + viewport + status bar
@@ -71,6 +73,13 @@ IndexedDB (Dexie)  ──init──▶  useUniverseStore  ──subscribe──�
   record.
 
 ## Rendering & performance
+
+The store camera is the **target**; the renderer keeps a separate **display
+camera** that eases toward it each tick (exponential smoothing, zoom in log
+space). All controls — drag, wheel, buttons, keyboard, teleport, mini-map — set
+only the target, so motion is uniformly smooth and there is still a single
+source of truth. The smoothed camera and viewport size are published to
+`useStatsStore` for the mini-map/HUD without causing React re-renders.
 
 The `Renderer` implements the project's central performance idea in miniature:
 the background starfield is divided into fixed-size world **chunks**. Only chunks

@@ -61,6 +61,7 @@ working demo, and *extends* previous work rather than rewriting it. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the module map and
 [`docs/PHASES.md`](docs/PHASES.md) for phase-by-phase status.
 
-**Current status: Phase 1 complete** — project setup, dark dockable UI,
-resizable panels, deterministic universe canvas (pan/zoom + chunked starfield),
-God panel, universe manager with IndexedDB persistence and autosave.
+**Current status: Phase 2 complete** — everything from Phase 1 plus an infinite
+2D camera with smooth eased motion, keyboard navigation (WASD/arrows/zoom/home),
+a coordinate grid with live world-coordinate labels, and a click-to-teleport
+mini-map radar.

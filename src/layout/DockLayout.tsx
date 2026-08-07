@@ -7,6 +7,7 @@ import { InspectorPanel } from '@/panels/InspectorPanel';
 import { UniverseManager } from '@/panels/UniverseManager';
 import { UniverseCanvas } from '@/canvas/UniverseCanvas';
 import { ViewportOverlay } from '@/canvas/ViewportOverlay';
+import { MiniMap } from '@/canvas/MiniMap';
 import { useUiStore } from '@/state/useUiStore';
 import { useTimeEngine } from '@/state/useTimeEngine';
 
@@ -45,6 +46,7 @@ export function DockLayout() {
         <main className="relative min-w-0 flex-1">
           <UniverseCanvas />
           <ViewportOverlay />
+          <MiniMap />
         </main>
 
         {/* Right dock: God tools + Inspector */}
