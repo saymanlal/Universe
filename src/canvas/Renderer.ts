@@ -24,6 +24,7 @@ import {
   clearSystemCache,
   type Planet,
 } from '@/sim/planet';
+import { computeProfile, clearProfileCache } from '@/sim/planetProfile';
 import { ZOOM_MIN, ZOOM_MAX, starDetail, systemDetail } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { useStatsStore } from '@/state/useStatsStore';
@@ -151,6 +152,7 @@ export class Renderer {
         clearStarCache();
         clearGalaxyCache();
         clearSystemCache();
+        clearProfileCache();
         this.clearChunks();
         this.clearGalaxies();
         this.systemG.clear();
@@ -684,6 +686,16 @@ export class Renderer {
         alpha: 0.55 * detail,
       });
       const p = planetPosition(star, planet, simTime);
+      // Atmosphere halo (thin/temperate atmospheres only; giants excluded).
+      const profile = computeProfile(planet, star);
+      const press = profile.atmosphere.pressure;
+      if (planet.type !== 'gas' && planet.type !== 'iceGiant' && press > 0.05) {
+        const haze = profile.waterCoverage > 0.2 ? 0x9fd8ff : 0xd8c9a8;
+        g.circle(p.x, p.y, planet.radius * 1.7).fill({
+          color: haze,
+          alpha: Math.min(0.28, (Math.min(press, 3) / 3) * 0.3) * detail,
+        });
+      }
       // Moons + their orbits (drawn under the planet).
       for (const moon of planet.moons) {
         g.circle(p.x, p.y, moon.orbitRadius).stroke({

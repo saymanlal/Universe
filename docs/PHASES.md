@@ -195,8 +195,35 @@ transitions, LOD rendering.
 
 ---
 
+## ✅ Phase 7 — Deep Planet Generator
+
+**Goal:** Planet generator — biome, temperature, atmosphere, water, mass,
+gravity, rotation, life probability. Everything deterministic.
+
+**Delivered**
+
+- **`sim/planetProfile.ts`** — a rich deterministic profile layered on the
+  Phase 6 planet base (never rewriting it): mass (from density × radius³),
+  gravity, density, rotation period (with tidal-locking for close-in worlds),
+  axial tilt, a composed **atmosphere** (pressure + gas components by
+  type/gravity/temperature — H/He giants, CO₂ hothouses, N₂/O₂ temperate…),
+  greenhouse-adjusted **surface temperature**, **water coverage**, **biome**
+  classification, albedo, and a **habitability / life-probability** index from a
+  product of comfort factors (temperature, water, gravity, pressure, star type).
+- **PlanetInspector** expanded with Physical / Atmosphere / Surface /
+  Habitability sections, atmospheric-composition bars, and habitability + life
+  meters with a life-potential label.
+- **Atmosphere halos** rendered on rocky planets in the solar-system view
+  (bluish where water-rich), scaled by pressure and the LOD fade.
+
+**Verification**
+
+- `npm run build` passes; every planet yields a full, deterministic profile,
+  shown live in the inspector, with no storage. Vercel Free unchanged.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 7** — Deep planet generator (biome, atmosphere, water, gravity, life
-  probability) on top of the Phase 6 planet base.
+- **Phase 8** — Time engine UI (pause/play/speed, minute→year, timeline clock).
 - …through **Phase 40** — production release.

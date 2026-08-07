@@ -61,8 +61,8 @@ working demo, and *extends* previous work rather than rewriting it. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the module map and
 [`docs/PHASES.md`](docs/PHASES.md) for phase-by-phase status.
 
-**Current status: Phase 6 complete** — everything from Phases 1–5 plus
-**solar systems**: zoom into any star to reveal its planets and moons on
-animated Kepler orbits (they revolve as the simulation clock runs), with
-click-to-select planets/moons and a detailed inspector. Three LOD tiers now
-crossfade smoothly: galaxies → stars → solar systems.
+**Current status: Phase 7 complete** — everything from Phases 1–6 plus a
+**deep planet generator**: every planet has a deterministic profile — mass,
+gravity, rotation, a composed atmosphere, water coverage, biome, surface
+temperature, and a habitability / life-probability index — shown in a rich
+inspector, with atmosphere halos in the solar-system view.

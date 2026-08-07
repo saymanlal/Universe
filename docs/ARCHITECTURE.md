@@ -32,8 +32,10 @@ src/
 │   │                id resolution, bounded search (density driven by galaxies)
 │   ├── galaxy.ts    Galaxies + clusters/voids (region-density noise), LOD
 │   │                statistics, galaxyAt / star-density field
-│   └── planet.ts    Solar systems: planets + moons, Kepler orbits animated by
-│                    the sim clock, id resolution (planet/moon)
+│   ├── planet.ts    Solar systems: planets + moons, Kepler orbits animated by
+│   │                the sim clock, id resolution (planet/moon)
+│   └── planetProfile.ts  Deep planet profile: mass/gravity/rotation,
+│                    atmosphere, water, biome, habitability & life probability
 │
 ├── db/              Persistence (no backend)
 │   └── database.ts  Dexie/IndexedDB schema + universe/snapshot/kv helpers
