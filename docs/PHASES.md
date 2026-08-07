@@ -163,7 +163,40 @@ transitions, LOD rendering.
 
 ---
 
+## ✅ Phase 6 — Solar Systems
+
+**Goal:** Solar systems — stars, planets, moons, orbital paths, inspector.
+
+**Delivered**
+
+- **`sim/planet.ts`** — deterministic solar systems: planets (orbit radius via
+  growing spacing, Kepler-third-law periods, equilibrium temperature, size in
+  Earth radii, type classification lava→gas/ice giant, colour) and moons
+  (count by planet type, small orbits/periods). Pure function of the star; ids
+  `P|<starId>|i` and `M|<starId>|i|m`; `planetPosition`/`moonPosition` are
+  functions of the **sim clock**, so bodies revolve deterministically.
+- **Third LOD tier** — `canvas/viewport.ts` `systemDetail`; the renderer draws
+  an animated **solar-system overlay** (enlarged star, orbital paths, planets,
+  moons + moon orbits) for the star nearest the camera when zoomed in, fading in
+  across the band and tuned so a whole system frames at full detail.
+- **Animated orbits** — planets/moons advance with `simTime` (play the clock to
+  watch them revolve); everything recomputed each frame (a handful of bodies).
+- **LOD-aware selection** — planets/moons are picked first when zoomed in; the
+  selection ring tracks the moving body live from the sim clock.
+- **Inspectors** — `PlanetInspector` (type, distance AU, period yr, radius R⊕,
+  temperature, moons; frame-system + select-star + moon list) and a
+  `StarInspector` upgrade listing the star's planets (click to select + enter).
+
+**Verification**
+
+- `npm run build` passes; zooming into a star reveals its orbiting system,
+  planets/moons are clickable/inspectable, orbits animate with the clock — all
+  deterministic and storage-free. Vercel Free unchanged.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 6** — Solar systems: stars → planets → moons, orbital paths, inspector.
+- **Phase 7** — Deep planet generator (biome, atmosphere, water, gravity, life
+  probability) on top of the Phase 6 planet base.
 - …through **Phase 40** — production release.
