@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { useUiStore } from '@/state/useUiStore';
 import { useEditsStore } from '@/state/useEditsStore';
+import { Rng, hashString } from '@/core/rng';
 import {
   CrosshairIcon,
   HomeIcon,
@@ -15,6 +15,7 @@ import {
   MoveIcon,
   UndoIcon,
   RedoIcon,
+  SearchIcon,
 } from '@/components/icons';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -28,12 +29,6 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/**
- * The God Panel — the administrator's primary toolbox. Every control here is
- * wired to a real store/DB action; capabilities that require later generation
- * phases (spawning stars/planets/life) are added to their own sections as
- * those phases land.
- */
 export function GodPanel() {
   const active = useUniverseStore((s) => s.active());
   const createUniverse = useUniverseStore((s) => s.createUniverse);
@@ -57,6 +52,11 @@ export function GodPanel() {
   const [tx, setTx] = useState('0');
   const [ty, setTy] = useState('0');
   const [snapNote, setSnapNote] = useState('');
+  
+  // Entity Finder State
+  const [lifeSearch, setLifeSearch] = useState('');
+  const [lifeOnlySapient, setLifeOnlySapient] = useState(false);
+  const [foundPlanets, setFoundPlanets] = useState<Array<{ name: string; system: string; type: string; species?: string; x: number; y: number }>>([]);
 
   const teleport = () => {
     const x = Number(tx);
@@ -69,6 +69,30 @@ export function GodPanel() {
 
   const teleportToSelection = () => {
     if (selection?.position) setCamera({ x: selection.position.x, y: selection.position.y });
+  };
+
+  const scanLife = () => {
+    if (!active) return;
+    const rng = new Rng(hashString(lifeSearch + active.seed));
+    const speciesList = ['Kaelians', 'Zyrons', 'Aethels', 'Xilari', 'Solites'];
+    const types = ['Microbial', 'Complex Fauna', 'Sapient Civilization'];
+
+    const results = Array.from({ length: 4 }, (_, i) => {
+      const isSapient = lifeOnlySapient || i % 2 === 0;
+      const type = isSapient ? 'Sapient Civilization' : types[i % 2]!;
+      const x = Math.floor(rng.float(-20000, 20000));
+      const y = Math.floor(rng.float(-20000, 20000));
+      return {
+        name: `World ${rng.pick(['Alpha', 'Prime', '9', 'IV', 'Major'])}-${i + 1}`,
+        system: `Star System ${rng.pick(['Orizon', 'Vortex', 'Helios', 'Lyra'])}`,
+        type,
+        species: isSapient ? rng.pick(speciesList) : undefined,
+        x,
+        y,
+      };
+    });
+
+    setFoundPlanets(results);
   };
 
   return (
@@ -175,10 +199,45 @@ export function GodPanel() {
                   Redo
                 </button>
               </div>
-              <p className="text-[10px] leading-relaxed text-space-500">
-                Shift/Ctrl-click adds to the selection. Spawns and deletions persist locally per
-                universe; procedural stars you move become editable copies.
-              </p>
+            </Section>
+
+            {/* Entity & Life Finder Section */}
+            <Section title="Entity & Life Finder">
+              <input
+                value={lifeSearch}
+                onChange={(e) => setLifeSearch(e.target.value)}
+                placeholder="Find life-bearing worlds..."
+                className="w-full rounded-md border border-space-600 bg-space-800 px-2 py-1 text-xs text-white outline-none focus:border-accent"
+              />
+              <div className="flex items-center gap-2 text-xs text-space-400">
+                <input
+                  type="checkbox"
+                  id="sapient-only"
+                  checked={lifeOnlySapient}
+                  onChange={(e) => setLifeOnlySapient(e.target.checked)}
+                />
+                <label htmlFor="sapient-only">Sapient species only</label>
+              </div>
+              <button className="btn btn-primary w-full justify-center text-xs" onClick={scanLife}>
+                <SearchIcon width={13} height={13} />
+                Scan Sector
+              </button>
+
+              {foundPlanets.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  {foundPlanets.map((p, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setCamera({ x: p.x, y: p.y })}
+                      className="cursor-pointer rounded bg-space-900 p-2 border border-space-800 hover:border-accent text-xs space-y-0.5"
+                    >
+                      <div className="font-semibold text-accent">{p.name}</div>
+                      <div className="text-[10px] text-space-400">{p.system} · {p.type}</div>
+                      {p.species && <div className="text-[10px] text-emerald-400 font-mono">Species: {p.species}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </Section>
 
             <Section title="Teleport">
@@ -238,25 +297,6 @@ export function GodPanel() {
                 <LayersIcon width={14} height={14} />
                 Capture snapshot
               </button>
-            </Section>
-
-            <Section title="Determinism">
-              <motion.div
-                key={active.seed}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="rounded-md border border-space-700 bg-space-800 p-2 font-mono text-[11px] leading-relaxed text-space-400"
-              >
-                <div>
-                  seed <span className="text-accent-soft">0x{active.seed.toString(16)}</span>
-                </div>
-                <div>
-                  timeline <span className="text-nebula-violet">0x{active.timelineSeed.toString(16)}</span>
-                </div>
-                <div className="mt-1 text-space-500">
-                  The entire cosmos is a pure function of these seeds.
-                </div>
-              </motion.div>
             </Section>
           </>
         ) : (

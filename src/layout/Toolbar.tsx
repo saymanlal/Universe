@@ -1,5 +1,6 @@
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { useUiStore } from '@/state/useUiStore';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   GalaxyIcon,
   LayersIcon,
@@ -11,13 +12,17 @@ import {
   ClockIcon,
   DownloadIcon,
   ZapIcon,
+  AtomIcon,
+  InfinityIcon,
 } from '@/components/icons';
 
 /**
  * The top application toolbar: brand, universe switcher, star search, a compact
- * play/pause (full controls live in the Timeline bar), and panel toggles.
+ * play/pause, navigation links, and panel toggles.
  */
 export function Toolbar() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const active = useUniverseStore((s) => s.active());
   const time = useUniverseStore((s) => s.time);
   const setTime = useUniverseStore((s) => s.setTime);
@@ -48,6 +53,36 @@ export function Toolbar() {
         {active ? active.name : 'No universe'}
       </button>
 
+      {/* Nav Links */}
+      <div className="flex items-center gap-1 border-l border-r border-space-700 px-2">
+        <button
+          onClick={() => navigate('/universe')}
+          className={`btn text-xs ${location.pathname === '/universe' ? 'btn-primary' : ''}`}
+        >
+          🌌 Inspector
+        </button>
+        <button
+          onClick={() => navigate('/god')}
+          className={`btn text-xs ${location.pathname.startsWith('/god') ? 'btn-primary' : ''}`}
+        >
+          ⚡ God Hub
+        </button>
+        <button
+          onClick={() => navigate('/god/quantum')}
+          className={`btn btn-icon text-cyan-400 ${location.pathname === '/god/quantum' ? 'bg-space-800' : ''}`}
+          title="Quantum Realm"
+        >
+          <AtomIcon width={14} height={14} />
+        </button>
+        <button
+          onClick={() => navigate('/god/multiverse')}
+          className={`btn btn-icon text-amber-400 ${location.pathname === '/god/multiverse' ? 'bg-space-800' : ''}`}
+          title="Multiverse Map"
+        >
+          <InfinityIcon width={14} height={14} />
+        </button>
+      </div>
+
       <button
         className="btn"
         onClick={() => setSearchOpen(true)}
@@ -75,44 +110,44 @@ export function Toolbar() {
 
       <div className="flex items-center gap-1">
         <button
-        className="btn btn-icon"
-        onClick={() => setImportExportOpen(true)}
-        title="Import / Export Universes"
-      >
-        <DownloadIcon width={16} height={16} />
-      </button>
+          className="btn btn-icon"
+          onClick={() => setImportExportOpen(true)}
+          title="Import / Export Universes"
+        >
+          <DownloadIcon width={16} height={16} />
+        </button>
 
-      <button
-        className="btn btn-icon text-accent-cyan"
-        onClick={() => toggleWindow('conversationMonitor')}
-        title="Live Conversation & Mind Monitor"
-      >
-        💬
-      </button>
+        <button
+          className="btn btn-icon text-accent-cyan"
+          onClick={() => toggleWindow('conversationMonitor')}
+          title="Live Conversation & Mind Monitor"
+        >
+          💬
+        </button>
 
-      <button
-        className="btn btn-icon text-amber-400"
-        onClick={() => toggleWindow('physicsEditor')}
-        title="Physics & Chemistry Lab"
-      >
-        🧪
-      </button>
+        <button
+          className="btn btn-icon text-amber-400"
+          onClick={() => toggleWindow('physicsEditor')}
+          title="Physics & Chemistry Lab"
+        >
+          🧪
+        </button>
 
-      <button
-        className="btn btn-icon text-emerald-400"
-        onClick={() => toggleWindow('searchEverything')}
-        title="Life & Intelligent Civilization Finder"
-      >
-        🔍 Life
-      </button>
+        <button
+          className="btn btn-icon text-emerald-400"
+          onClick={() => toggleWindow('searchEverything')}
+          title="Life & Intelligent Civilization Finder"
+        >
+          🔍 Life
+        </button>
 
-      <button
-        className="btn btn-icon"
-        onClick={() => setPluginPanelOpen(true)}
-        title="Plugin Manager"
-      >
-        <ZapIcon width={16} height={16} />
-      </button>
+        <button
+          className="btn btn-icon"
+          onClick={() => setPluginPanelOpen(true)}
+          title="Plugin Manager"
+        >
+          <ZapIcon width={16} height={16} />
+        </button>
         <button
           className={`btn btn-icon ${panels.timeline ? 'text-white' : ''}`}
           title="Toggle Timeline"

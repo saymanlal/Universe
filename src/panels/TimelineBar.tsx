@@ -19,10 +19,13 @@ const SPEEDS: { v: number; label: string }[] = [
   { v: 86400, label: 'day' },
   { v: 604800, label: 'week' },
   { v: YEAR_SECONDS, label: 'year' },
+  { v: YEAR_SECONDS * 1000, label: '1k yr' },
+  { v: YEAR_SECONDS * 1000000, label: '1M yr' },
 ];
-const MAX_SPEED = YEAR_SECONDS * 50;
 
 function rateLabel(speed: number): string {
+  if (speed >= YEAR_SECONDS * 1e6) return `${formatCompact(speed / (YEAR_SECONDS * 1e6))}M yr/s`;
+  if (speed >= YEAR_SECONDS * 1e3) return `${formatCompact(speed / (YEAR_SECONDS * 1e3))}k yr/s`;
   if (speed >= YEAR_SECONDS) return `${formatCompact(speed / YEAR_SECONDS)} yr/s`;
   if (speed >= 604800) return `${(speed / 604800).toFixed(0)} wk/s`;
   if (speed >= 86400) return `${(speed / 86400).toFixed(0)} d/s`;
@@ -31,12 +34,6 @@ function rateLabel(speed: number): string {
   return `${speed}× real-time`;
 }
 
-/**
- * The time engine's control surface: transport (step / play / pause /
- * fast-forward / rewind), speed presets, a live timeline clock, and a
- * jump-to-year control. Because the universe is a pure function of the sim
- * clock, time can run forward, backward, be stepped, or jumped freely.
- */
 export function TimelineBar() {
   const time = useUniverseStore((s) => s.time);
   const setTime = useUniverseStore((s) => s.setTime);
@@ -45,6 +42,7 @@ export function TimelineBar() {
   const simTime = useUniverseStore((s) => s.active()?.simTime ?? 0);
 
   const [gotoYear, setGotoYear] = useState('');
+  const [customSpeed, setCustomSpeed] = useState('100000');
   const parts = simTimeParts(simTime);
 
   const pad = (n: number, w = 2) => String(n).padStart(w, '0');
@@ -59,6 +57,13 @@ export function TimelineBar() {
     if (Number.isFinite(y) && gotoYear.trim() !== '') {
       setSimTime(Math.max(0, y) * YEAR_SECONDS);
       setGotoYear('');
+    }
+  };
+
+  const applyCustomSpeed = () => {
+    const s = Number(customSpeed);
+    if (Number.isFinite(s) && s > 0) {
+      setTime({ speed: s });
     }
   };
 
@@ -87,16 +92,16 @@ export function TimelineBar() {
           {running ? <PauseIcon width={15} height={15} /> : <PlayIcon width={15} height={15} />}
         </button>
         <button
-          className={`btn btn-icon ${running && !time.reverse && time.speed < MAX_SPEED ? 'btn-primary' : ''}`}
-          title="Play forward"
+          className={`btn btn-icon ${running && !time.reverse ? 'btn-primary' : ''}`}
+          title="Play forward (unlimited duration)"
           onClick={() => setTime({ paused: false, reverse: false })}
         >
           <PlayIcon width={15} height={15} />
         </button>
         <button
-          className={`btn btn-icon ${running && time.speed >= MAX_SPEED ? 'btn-primary' : ''}`}
-          title="Fast-forward (maximum speed)"
-          onClick={() => setTime({ paused: false, reverse: false, speed: MAX_SPEED })}
+          className={`btn btn-icon ${running && time.speed >= YEAR_SECONDS * 1000000 ? 'btn-primary' : ''}`}
+          title="Infinite Fast-Forward (1 Million yr/s)"
+          onClick={() => setTime({ paused: false, reverse: false, speed: YEAR_SECONDS * 1000000 })}
         >
           <FastForwardIcon width={15} height={15} />
         </button>
@@ -136,6 +141,22 @@ export function TimelineBar() {
             {s.label}
           </button>
         ))}
+
+        {/* Custom speed input */}
+        <div className="flex items-center gap-1 border-l border-space-700 pl-1 ml-1">
+          <input
+            type="number"
+            value={customSpeed}
+            onChange={(e) => setCustomSpeed(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && applyCustomSpeed()}
+            placeholder="Custom"
+            className="w-20 rounded bg-space-800 border border-space-700 px-1.5 py-0.5 text-xs text-white outline-none focus:border-accent"
+          />
+          <button onClick={applyCustomSpeed} className="btn text-xs px-1.5 py-0.5">
+            Set
+          </button>
+        </div>
+
         <button
           className={`btn btn-icon ${time.reverse ? 'btn-primary' : ''}`}
           title="Reverse direction"
