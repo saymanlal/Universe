@@ -1,0 +1,70 @@
+import Dexie, { type Table } from 'dexie';
+import type { Universe } from '@/core/types';
+
+/**
+ * A stored snapshot of a universe at a point in time. Only the record (seeds,
+ * simTime, edits) is captured — never the generated cosmos — so snapshots are
+ * cheap. Timeline branching (Phase 28) forks from these.
+ */
+export interface Snapshot {
+  id: string;
+  universeId: string;
+  label: string;
+  createdAt: number;
+  /** Serialized universe record at capture time. */
+  universe: Universe;
+}
+
+/** Generic key/value store for engine settings and autosave metadata. */
+export interface KeyValue {
+  key: string;
+  value: unknown;
+}
+
+/**
+ * The single browser-local database for the whole engine. No backend, no
+ * server — everything lives in IndexedDB via Dexie. Later phases add tables
+ * here (edits, experiments, history) without altering existing ones.
+ */
+export class UniverseDatabase extends Dexie {
+  universes!: Table<Universe, string>;
+  snapshots!: Table<Snapshot, string>;
+  kv!: Table<KeyValue, string>;
+
+  constructor() {
+    super('universe-engine');
+    this.version(1).stores({
+      universes: 'id, name, updatedAt',
+      snapshots: 'id, universeId, createdAt',
+      kv: 'key',
+    });
+  }
+}
+
+export const db = new UniverseDatabase();
+
+/** Persist (create or overwrite) a universe record. */
+export async function saveUniverse(u: Universe): Promise<void> {
+  await db.universes.put(u);
+}
+
+export async function deleteUniverseRecord(id: string): Promise<void> {
+  await db.transaction('rw', db.universes, db.snapshots, async () => {
+    await db.universes.delete(id);
+    await db.snapshots.where('universeId').equals(id).delete();
+  });
+}
+
+export async function listUniverses(): Promise<Universe[]> {
+  return db.universes.orderBy('updatedAt').reverse().toArray();
+}
+
+/** Read a single key/value setting, with a typed fallback. */
+export async function getSetting<T>(key: string, fallback: T): Promise<T> {
+  const row = await db.kv.get(key);
+  return row ? (row.value as T) : fallback;
+}
+
+export async function setSetting(key: string, value: unknown): Promise<void> {
+  await db.kv.put({ key, value });
+}

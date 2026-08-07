@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-space-950 text-space-300 font-sans antialiased;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Thin, dark scrollbars to match the pro tooling aesthetic */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.space.600') transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: theme('colors.space.600');
+    border-radius: 8px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: theme('colors.space.500');
+  }
+
+  canvas {
+    display: block;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-space-850 border border-space-700 rounded-lg shadow-panel;
+  }
+
+  .panel-header {
+    @apply flex items-center justify-between px-3 py-2 border-b border-space-700 text-xs font-semibold uppercase tracking-wider text-space-400 select-none;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium
+      text-space-300 transition-colors duration-150 select-none
+      hover:bg-space-700 hover:text-white active:bg-space-600
+      focus:outline-none focus-visible:ring-1 focus-visible:ring-accent;
+  }
+
+  .btn-primary {
+    @apply bg-accent/90 text-white hover:bg-accent hover:text-white active:bg-accent-soft;
+  }
+
+  .btn-icon {
+    @apply w-8 h-8 p-0;
+  }
+
+  .field-label {
+    @apply text-[11px] font-medium uppercase tracking-wide text-space-400;
+  }
+
+  .kbd {
+    @apply inline-flex items-center rounded border border-space-600 bg-space-800 px-1.5 py-0.5 text-[10px] font-mono text-space-400;
+  }
+}
