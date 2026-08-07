@@ -11,6 +11,7 @@ import {
   setSetting,
   type Snapshot,
 } from '@/db/database';
+import { useToastStore } from '@/state/useToastStore';
 
 const ACTIVE_KEY = 'activeUniverseId';
 
@@ -102,38 +103,49 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
   },
 
   createUniverse: async (name, seedText) => {
-    const now = Date.now();
-    const displayName = (name ?? '').trim() || `Universe ${get().universes.length + 1}`;
-    const universe: Universe = {
-      id: createId('uni'),
-      name: displayName,
-      seed: seedFromText(seedText),
-      timelineSeed: hashString(createId('timeline')),
-      simTime: 0,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await saveUniverse(universe);
-    await setSetting(ACTIVE_KEY, universe.id);
-    set((s) => ({
-      universes: [universe, ...s.universes],
-      activeId: universe.id,
-      camera: { ...DEFAULT_CAMERA },
-      time: { ...DEFAULT_TIME },
-      selection: null,
-      selections: [],
-    }));
-    return universe;
+    try {
+      const now = Date.now();
+      const displayName = (name ?? '').trim() || `Universe ${get().universes.length + 1}`;
+      const universe: Universe = {
+        id: createId('uni'),
+        name: displayName,
+        seed: seedFromText(seedText),
+        timelineSeed: hashString(createId('timeline')),
+        simTime: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await saveUniverse(universe);
+      await setSetting(ACTIVE_KEY, universe.id);
+      set((s) => ({
+        universes: [universe, ...s.universes],
+        activeId: universe.id,
+        camera: { ...DEFAULT_CAMERA },
+        time: { ...DEFAULT_TIME },
+        selection: null,
+        selections: [],
+      }));
+      useToastStore.getState().toast({ type: 'success', title: 'Universe created', description: universe.name });
+      return universe;
+    } catch (err) {
+      useToastStore.getState().toast({ type: 'error', title: 'Failed to create universe' });
+      throw err;
+    }
   },
 
   deleteUniverse: async (id) => {
-    await deleteUniverseRecord(id);
-    set((s) => {
-      const universes = s.universes.filter((u) => u.id !== id);
-      const activeId = s.activeId === id ? (universes[0]?.id ?? null) : s.activeId;
-      return { universes, activeId };
-    });
-    await setSetting(ACTIVE_KEY, get().activeId);
+    try {
+      await deleteUniverseRecord(id);
+      set((s) => {
+        const universes = s.universes.filter((u) => u.id !== id);
+        const activeId = s.activeId === id ? (universes[0]?.id ?? null) : s.activeId;
+        return { universes, activeId };
+      });
+      await setSetting(ACTIVE_KEY, get().activeId);
+      useToastStore.getState().toast({ type: 'info', title: 'Universe deleted' });
+    } catch (err) {
+      useToastStore.getState().toast({ type: 'error', title: 'Failed to delete universe' });
+    }
   },
 
   renameUniverse: async (id, name) => {
@@ -161,20 +173,26 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
   },
 
   duplicateUniverse: async (id) => {
-    const source = get().universes.find((u) => u.id === id);
-    if (!source) return null;
-    const now = Date.now();
-    // A full copy: identical cosmos AND timeline, independent record.
-    const copy: Universe = {
-      ...source,
-      id: createId('uni'),
-      name: `${source.name} (copy)`,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await saveUniverse(copy);
-    set((s) => ({ universes: [copy, ...s.universes] }));
-    return copy;
+    try {
+      const source = get().universes.find((u) => u.id === id);
+      if (!source) return null;
+      const now = Date.now();
+      // A full copy: identical cosmos AND timeline, independent record.
+      const copy: Universe = {
+        ...source,
+        id: createId('uni'),
+        name: `${source.name} (copy)`,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await saveUniverse(copy);
+      set((s) => ({ universes: [copy, ...s.universes] }));
+      useToastStore.getState().toast({ type: 'success', title: 'Universe duplicated', description: copy.name });
+      return copy;
+    } catch (err) {
+      useToastStore.getState().toast({ type: 'error', title: 'Failed to duplicate universe' });
+      return null;
+    }
   },
 
   setActive: async (id) => {
@@ -189,40 +207,51 @@ export const useUniverseStore = create<UniverseState>((set, get) => ({
   },
 
   branchTimeline: async (id) => {
-    const source = get().universes.find((u) => u.id === id);
-    if (!source) return null;
-    const now = Date.now();
-    const branch: Universe = {
-      ...source,
-      id: createId('uni'),
-      name: `${source.name} (branch)`,
-      // Same cosmos seed → same physical universe, but a divergent timeline.
-      timelineSeed: hashString(createId('timeline')),
-      createdAt: now,
-      updatedAt: now,
-    };
-    await saveUniverse(branch);
-    await setSetting(ACTIVE_KEY, branch.id);
-    set((s) => ({
-      universes: [branch, ...s.universes],
-      activeId: branch.id,
-      selection: null,
-      selections: [],
-    }));
-    return branch;
+    try {
+      const source = get().universes.find((u) => u.id === id);
+      if (!source) return null;
+      const now = Date.now();
+      const branch: Universe = {
+        ...source,
+        id: createId('uni'),
+        name: `${source.name} (branch)`,
+        // Same cosmos seed → same physical universe, but a divergent timeline.
+        timelineSeed: hashString(createId('timeline')),
+        createdAt: now,
+        updatedAt: now,
+      };
+      await saveUniverse(branch);
+      await setSetting(ACTIVE_KEY, branch.id);
+      set((s) => ({
+        universes: [branch, ...s.universes],
+        activeId: branch.id,
+        selection: null,
+        selections: [],
+      }));
+      useToastStore.getState().toast({ type: 'success', title: 'Timeline branched', description: branch.name });
+      return branch;
+    } catch (err) {
+      useToastStore.getState().toast({ type: 'error', title: 'Failed to branch timeline' });
+      return null;
+    }
   },
 
   captureSnapshot: async (label) => {
-    const u = get().active();
-    if (!u) return;
-    const snapshot: Snapshot = {
-      id: createId('snap'),
-      universeId: u.id,
-      label: (label ?? '').trim() || `Snapshot @ ${formatSimTimeShort(u.simTime)}`,
-      createdAt: Date.now(),
-      universe: { ...u },
-    };
-    await db.snapshots.put(snapshot);
+    try {
+      const u = get().active();
+      if (!u) return;
+      const snapshot: Snapshot = {
+        id: createId('snap'),
+        universeId: u.id,
+        label: (label ?? '').trim() || `Snapshot @ ${formatSimTimeShort(u.simTime)}`,
+        createdAt: Date.now(),
+        universe: { ...u },
+      };
+      await db.snapshots.put(snapshot);
+      useToastStore.getState().toast({ type: 'success', title: 'Snapshot captured', description: snapshot.label });
+    } catch (err) {
+      useToastStore.getState().toast({ type: 'error', title: 'Failed to capture snapshot' });
+    }
   },
 
   setCamera: (camera) => {

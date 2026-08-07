@@ -198,3 +198,77 @@ export const MoveIcon = (p: IconProps) => (
     <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
   </svg>
 );
+
+export const SparkleIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
+  </svg>
+);
+
+export const BellIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 01-3.46 0" />
+  </svg>
+);
+
+export const CheckIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+export const AlertIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
+export const InfoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+
+export const ZapIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+
+export const DnaIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 3h16M4 21h16M14.6 9l4.4-6M5 3l4.4 6M14.6 15l4.4 6M5 21l4.4-6M10 12h4M7 9h10M7 15h10M12 7v2M12 15v2" />
+  </svg>
+);
+
+export const InfinityIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M8 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4c2.2 0 3.8-1.8 5-3l2-2c1.2-1.2 2.8-3 5-3a4 4 0 0 1 4 4 4 4 0 0 1-4 4c-2.2 0-3.8-1.8-5-3l-2-2" />
+  </svg>
+);
+
+export const DownloadIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3v12M8 11l4 4 4-4" />
+    <path d="M3 19h18" />
+  </svg>
+);
+
+export const UploadIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 15V3M8 7l4-4 4 4" />
+    <path d="M3 19h18" />
+  </svg>
+);
+
+export const PackageIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 7l9-4 9 4M3 7v10l9 4 9-4V7M12 3v18M3 7l9 4 9-4" />
+  </svg>
+);
+

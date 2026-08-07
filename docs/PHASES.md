@@ -340,7 +340,58 @@ timeline clock.
 
 ---
 
-## ⬜ Upcoming
+## ✅ Phase 36 — Visual Polish
 
-- **Phase 12** — Chemistry engine: Elements, Compounds, Reactions.
-- …through **Phase 40** — production release.
+**Goal:** Visual polish — animations, particles, transitions, modern UI, toast notification system.
+
+**Delivered**
+
+- **Toast System**: `useToastStore` & `ToastContainer` delivering auto-dismissing, stackable alerts with Framer Motion enter/exit animations.
+- **Enhanced Design System**: Shimmer loading skeletons, glowing accents, glassmorphic UI panels, and custom scrollbars (`src/index.css` & `tailwind.config.js`).
+- **Animated Panels & HUD**: Framer Motion `AnimatePresence` dock transitions and enhanced `BootScreen` and `EmptyState` visuals.
+
+---
+
+## ✅ Phase 37 — Import/Export System
+
+**Goal:** Import/export — compressed `.universe` files, bulk backup, offline sharing without server storage.
+
+**Delivered**
+
+- **`core/importExport.ts`**: Native browser compression/decompression using `CompressionStream` & `DecompressionStream` (deflate-raw).
+- **Import/Export UI**: `ImportExportPanel` drag-and-drop file upload zone, active universe export, and full bulk workspace export.
+
+---
+
+## ✅ Phase 38 — Plugin Architecture
+
+**Goal:** Plugin architecture — allow future modules and third-party extensions.
+
+**Delivered**
+
+- **`core/plugin.ts`**: Sandboxed `PluginAPI` surface providing active universe access, camera state, frame tick subscriptions, and IndexedDB key-value persistence.
+- **`usePluginStore` & `PluginPanel`**: Dynamic plugin registration, toggle activation/deactivation, error isolation, and UI management panel.
+
+---
+
+## ✅ Phase 39 — Documentation
+
+**Goal:** Documentation — architecture map, API reference, developer guide.
+
+**Delivered**
+
+- **`docs/ARCHITECTURE.md`**: Complete architectural breakdown of modules, data flow, and rendering strategy.
+- **`docs/API.md`**: Complete API reference for core deterministic generators, IndexedDB schema, and Plugin API.
+- **`docs/DEV_GUIDE.md`**: Setup instructions, project guidelines, directory structure map, and Vercel Free deployment instructions.
+
+---
+
+## ✅ Phase 40 — Production Release
+
+**Goal:** Production release — final optimizations, verification, bug cleanup, ready for Vercel Free deployment.
+
+**Delivered**
+
+- **Static SPA Bundle**: Optimized build verified (`npm run build`), zero TypeScript errors, clean bundle split.
+- **100% Client-Side Engine**: Fully deterministic, zero backends, zero servers, zero paid APIs, zero subscriptions.
+- **Vercel Free Deployment Ready**: Configured `vercel.json` rewrite rules and static SPA output directory.

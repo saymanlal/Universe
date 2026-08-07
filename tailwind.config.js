@@ -38,6 +38,8 @@ export default {
       boxShadow: {
         panel: '0 8px 32px -8px rgba(0,0,0,0.6)',
         glow: '0 0 24px -4px rgba(109,139,255,0.5)',
+        'glow-lg': '0 0 40px -4px rgba(109,139,255,0.6)',
+        'glow-nebula': '0 0 32px -4px rgba(165,108,255,0.5)',
       },
       keyframes: {
         'fade-in': {
@@ -48,10 +50,20 @@ export default {
           '0%, 100%': { opacity: '0.6' },
           '50%': { opacity: '1' },
         },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
         'pulse-slow': 'pulse-slow 2.4s ease-in-out infinite',
+        shimmer: 'shimmer 2s linear infinite',
+        float: 'float 6s ease-in-out infinite',
       },
     },
   },

@@ -78,4 +78,44 @@
   .kbd {
     @apply inline-flex items-center rounded border border-space-600 bg-space-800 px-1.5 py-0.5 text-[10px] font-mono text-space-400;
   }
+
+  .skeleton {
+    @apply bg-space-800 relative overflow-hidden;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  .glow-text {
+    @apply text-white;
+    text-shadow: 0 0 12px rgba(109,139,255,0.6);
+  }
+
+  .panel-enter {
+    animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass {
+    @apply bg-space-900/60 backdrop-blur-md border border-white/10;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 12px rgba(109,139,255,0.4)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 24px rgba(109,139,255,0.8)); }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }

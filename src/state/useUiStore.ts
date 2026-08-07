@@ -19,6 +19,10 @@ interface UiState {
   searchOpen: boolean;
   /** Active God-Mode placement tool (armed for the next canvas click). */
   godTool: 'none' | 'spawn' | 'move';
+  /** Import/Export modal. */
+  importExportOpen: boolean;
+  /** Plugin manager modal. */
+  pluginPanelOpen: boolean;
 
   togglePanel: (panel: keyof PanelVisibility) => void;
   setLeftWidth: (w: number) => void;
@@ -26,6 +30,8 @@ interface UiState {
   setManagerOpen: (open: boolean) => void;
   setSearchOpen: (open: boolean) => void;
   setGodTool: (tool: 'none' | 'spawn' | 'move') => void;
+  setImportExportOpen: (open: boolean) => void;
+  setPluginPanelOpen: (open: boolean) => void;
 }
 
 export const MIN_DOCK_WIDTH = 220;
@@ -40,6 +46,8 @@ export const useUiStore = create<UiState>((set) => ({
   managerOpen: false,
   searchOpen: false,
   godTool: 'none',
+  importExportOpen: false,
+  pluginPanelOpen: false,
 
   togglePanel: (panel) =>
     set((s) => ({ panels: { ...s.panels, [panel]: !s.panels[panel] } })),
@@ -48,4 +56,6 @@ export const useUiStore = create<UiState>((set) => ({
   setManagerOpen: (open) => set({ managerOpen: open }),
   setSearchOpen: (open) => set({ searchOpen: open }),
   setGodTool: (tool) => set({ godTool: tool }),
+  setImportExportOpen: (open) => set({ importExportOpen: open }),
+  setPluginPanelOpen: (open) => set({ pluginPanelOpen: open }),
 }));

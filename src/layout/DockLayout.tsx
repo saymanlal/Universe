@@ -6,6 +6,8 @@ import { GodPanel } from '@/panels/GodPanel';
 import { InspectorPanel } from '@/panels/InspectorPanel';
 import { UniverseManager } from '@/panels/UniverseManager';
 import { SearchPanel } from '@/panels/SearchPanel';
+import { ImportExportPanel } from '@/panels/ImportExportPanel';
+import { PluginPanel } from '@/panels/PluginPanel';
 import { TimelineBar } from '@/panels/TimelineBar';
 import { UniverseCanvas } from '@/canvas/UniverseCanvas';
 import { ViewportOverlay } from '@/canvas/ViewportOverlay';
@@ -15,6 +17,8 @@ import { useUniverseStore } from '@/state/useUniverseStore';
 import { useEditsStore } from '@/state/useEditsStore';
 import { useTimeEngine } from '@/state/useTimeEngine';
 import { useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ToastContainer } from '@/components/Toast';
 
 /**
  * The Unity/Figma-style dockable workspace: a top toolbar, resizable left and
@@ -101,17 +105,24 @@ export function DockLayout() {
 
       <div className="flex min-h-0 flex-1">
         {/* Left dock: Outliner */}
-        {panels.outliner && (
-          <>
-            <aside
-              className="flex shrink-0 flex-col border-r border-space-700 bg-space-850"
+        <AnimatePresence>
+          {panels.outliner && (
+            <motion.aside
+              key="left-dock"
+              className="flex shrink-0 flex-col border-r border-space-700 bg-space-850 relative"
               style={{ width: leftWidth }}
+              initial={{ x: -260, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -260, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
               <OutlinerPanel />
-            </aside>
-            <ResizeHandle width={leftWidth} side="left" onResize={setLeftWidth} />
-          </>
-        )}
+              <div className="absolute top-0 bottom-0 -right-2 z-10 w-4 flex justify-center">
+                <ResizeHandle width={leftWidth} side="left" onResize={setLeftWidth} />
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
 
         {/* Center: viewport */}
         <main className="relative min-w-0 flex-1">
@@ -121,13 +132,20 @@ export function DockLayout() {
         </main>
 
         {/* Right dock: God tools + Inspector */}
-        {(panels.god || panels.inspector) && (
-          <>
-            <ResizeHandle width={rightWidth} side="right" onResize={setRightWidth} />
-            <aside
-              className="flex shrink-0 flex-col border-l border-space-700 bg-space-850"
+        <AnimatePresence>
+          {(panels.god || panels.inspector) && (
+            <motion.aside
+              key="right-dock"
+              className="flex shrink-0 flex-col border-l border-space-700 bg-space-850 relative"
               style={{ width: rightWidth }}
+              initial={{ x: 260, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 260, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
+              <div className="absolute top-0 bottom-0 -left-2 z-10 w-4 flex justify-center">
+                <ResizeHandle width={rightWidth} side="right" onResize={setRightWidth} />
+              </div>
               {panels.god && (
                 <div className={panels.inspector ? 'h-1/2 min-h-0 border-b border-space-700' : 'flex-1 min-h-0'}>
                   <GodPanel />
@@ -138,9 +156,9 @@ export function DockLayout() {
                   <InspectorPanel />
                 </div>
               )}
-            </aside>
-          </>
-        )}
+            </motion.aside>
+          )}
+        </AnimatePresence>
       </div>
 
       {panels.timeline && hasUniverse && <TimelineBar />}
@@ -148,6 +166,9 @@ export function DockLayout() {
       <StatusBar />
       <UniverseManager />
       <SearchPanel />
+      <ImportExportPanel />
+      <PluginPanel />
+      <ToastContainer />
     </div>
   );
 }

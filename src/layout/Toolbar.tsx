@@ -9,6 +9,8 @@ import {
   CrosshairIcon,
   SearchIcon,
   ClockIcon,
+  DownloadIcon,
+  ZapIcon,
 } from '@/components/icons';
 
 /**
@@ -21,6 +23,8 @@ export function Toolbar() {
   const setTime = useUniverseStore((s) => s.setTime);
   const setManagerOpen = useUiStore((s) => s.setManagerOpen);
   const setSearchOpen = useUiStore((s) => s.setSearchOpen);
+  const setImportExportOpen = useUiStore((s) => s.setImportExportOpen);
+  const setPluginPanelOpen = useUiStore((s) => s.setPluginPanelOpen);
   const panels = useUiStore((s) => s.panels);
   const togglePanel = useUiStore((s) => s.togglePanel);
 
@@ -69,6 +73,21 @@ export function Toolbar() {
       </div>
 
       <div className="flex items-center gap-1">
+        <button
+        className="btn btn-icon"
+        onClick={() => setImportExportOpen(true)}
+        title="Import / Export Universes"
+      >
+        <DownloadIcon width={16} height={16} />
+      </button>
+
+      <button
+        className="btn btn-icon"
+        onClick={() => setPluginPanelOpen(true)}
+        title="Plugin Manager"
+      >
+        <ZapIcon width={16} height={16} />
+      </button>
         <button
           className={`btn btn-icon ${panels.timeline ? 'text-white' : ''}`}
           title="Toggle Timeline"
