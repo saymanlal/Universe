@@ -163,7 +163,67 @@ transitions, LOD rendering.
 
 ---
 
+## ✅ Phase 6 — Solar Systems
+
+**Goal:** Solar systems — stars, planets, moons, orbital paths, inspector.
+
+**Delivered**
+
+- **`sim/planet.ts`** — deterministic solar systems: planets (orbit radius via
+  growing spacing, Kepler-third-law periods, equilibrium temperature, size in
+  Earth radii, type classification lava→gas/ice giant, colour) and moons
+  (count by planet type, small orbits/periods). Pure function of the star; ids
+  `P|<starId>|i` and `M|<starId>|i|m`; `planetPosition`/`moonPosition` are
+  functions of the **sim clock**, so bodies revolve deterministically.
+- **Third LOD tier** — `canvas/viewport.ts` `systemDetail`; the renderer draws
+  an animated **solar-system overlay** (enlarged star, orbital paths, planets,
+  moons + moon orbits) for the star nearest the camera when zoomed in, fading in
+  across the band and tuned so a whole system frames at full detail.
+- **Animated orbits** — planets/moons advance with `simTime` (play the clock to
+  watch them revolve); everything recomputed each frame (a handful of bodies).
+- **LOD-aware selection** — planets/moons are picked first when zoomed in; the
+  selection ring tracks the moving body live from the sim clock.
+- **Inspectors** — `PlanetInspector` (type, distance AU, period yr, radius R⊕,
+  temperature, moons; frame-system + select-star + moon list) and a
+  `StarInspector` upgrade listing the star's planets (click to select + enter).
+
+**Verification**
+
+- `npm run build` passes; zooming into a star reveals its orbiting system,
+  planets/moons are clickable/inspectable, orbits animate with the clock — all
+  deterministic and storage-free. Vercel Free unchanged.
+
+---
+
+## ✅ Phase 7 — Deep Planet Generator
+
+**Goal:** Planet generator — biome, temperature, atmosphere, water, mass,
+gravity, rotation, life probability. Everything deterministic.
+
+**Delivered**
+
+- **`sim/planetProfile.ts`** — a rich deterministic profile layered on the
+  Phase 6 planet base (never rewriting it): mass (from density × radius³),
+  gravity, density, rotation period (with tidal-locking for close-in worlds),
+  axial tilt, a composed **atmosphere** (pressure + gas components by
+  type/gravity/temperature — H/He giants, CO₂ hothouses, N₂/O₂ temperate…),
+  greenhouse-adjusted **surface temperature**, **water coverage**, **biome**
+  classification, albedo, and a **habitability / life-probability** index from a
+  product of comfort factors (temperature, water, gravity, pressure, star type).
+- **PlanetInspector** expanded with Physical / Atmosphere / Surface /
+  Habitability sections, atmospheric-composition bars, and habitability + life
+  meters with a life-potential label.
+- **Atmosphere halos** rendered on rocky planets in the solar-system view
+  (bluish where water-rich), scaled by pressure and the LOD fade.
+
+**Verification**
+
+- `npm run build` passes; every planet yields a full, deterministic profile,
+  shown live in the inspector, with no storage. Vercel Free unchanged.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 6** — Solar systems: stars → planets → moons, orbital paths, inspector.
+- **Phase 8** — Time engine UI (pause/play/speed, minute→year, timeline clock).
 - …through **Phase 40** — production release.

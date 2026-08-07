@@ -1,13 +1,14 @@
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import { Rng, combineSeeds } from '@/core/rng';
 import { formatCompact } from '@/core/format';
-import type { Camera } from '@/core/types';
+import type { Camera, Selection } from '@/core/types';
 import {
   STAR_CHUNK_SIZE,
   generateChunkStars,
   clearStarCache,
   nearestStar,
 } from '@/sim/starfield';
+import type { Star } from '@/sim/star';
 import {
   galaxiesInRect,
   galaxyAt,
@@ -15,7 +16,16 @@ import {
   clearGalaxyCache,
   type Galaxy,
 } from '@/sim/galaxy';
-import { ZOOM_MIN, ZOOM_MAX, starDetail } from '@/canvas/viewport';
+import {
+  generateSystem,
+  planetPosition,
+  moonPosition,
+  resolveOrbitId,
+  clearSystemCache,
+  type Planet,
+} from '@/sim/planet';
+import { computeProfile, clearProfileCache } from '@/sim/planetProfile';
+import { ZOOM_MIN, ZOOM_MAX, starDetail, systemDetail } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { useStatsStore } from '@/state/useStatsStore';
 
@@ -59,6 +69,7 @@ export class Renderer {
   private world = new Container();
   private galaxyLayer = new Container();
   private starLayer = new Container();
+  private systemG = new Graphics();
   private gridG = new Graphics();
   private markerG = new Graphics();
   private selectionG = new Graphics();
@@ -67,6 +78,9 @@ export class Renderer {
   private chunks = new Map<string, Container>();
   private galaxyObjs = new Map<string, Container>();
   private lastRegion: string | null = null;
+  /** The star whose system is currently focused (nearest the camera centre). */
+  private focusedStar: Star | null = null;
+  private focusedPlanets: Planet[] = [];
 
   private seed = 0;
   private disposed = false;
@@ -120,6 +134,7 @@ export class Renderer {
     this.world.addChild(this.gridG);
     this.world.addChild(this.galaxyLayer);
     this.world.addChild(this.starLayer);
+    this.world.addChild(this.systemG);
     this.world.addChild(this.selectionG);
     this.world.addChild(this.markerG);
     this.app.stage.addChild(this.world);
@@ -136,8 +151,13 @@ export class Renderer {
         this.seed = nextSeed;
         clearStarCache();
         clearGalaxyCache();
+        clearSystemCache();
+        clearProfileCache();
         this.clearChunks();
         this.clearGalaxies();
+        this.systemG.clear();
+        this.focusedStar = null;
+        this.focusedPlanets = [];
         this.lastRegion = null;
       }
     });
@@ -275,6 +295,15 @@ export class Renderer {
     const store = useUniverseStore.getState();
     const detail = starDetail(this.display.zoom);
 
+    // Deepest LOD first: planets/moons of the focused system.
+    if (systemDetail(this.display.zoom) > 0.5 && this.focusedStar) {
+      const pick = this.pickOrbit(w.x, w.y, 10 / this.display.zoom);
+      if (pick) {
+        store.setSelection(pick);
+        return;
+      }
+    }
+
     // Zoomed out → galaxies; zoomed in → stars. Each falls back to the other.
     if (detail < 0.5) {
       const g = galaxyAt(this.seed, w.x, w.y);
@@ -300,6 +329,33 @@ export class Renderer {
     } else {
       store.setSelection(null);
     }
+  }
+
+  /** Nearest planet/moon of the focused system to a world point, or null. */
+  private pickOrbit(wx: number, wy: number, pickR: number): Selection | null {
+    if (!this.focusedStar) return null;
+    const star = this.focusedStar;
+    const simTime = useUniverseStore.getState().active()?.simTime ?? 0;
+    let best: Selection | null = null;
+    let bestD = Infinity;
+
+    for (const planet of this.focusedPlanets) {
+      const p = planetPosition(star, planet, simTime);
+      const dp = Math.hypot(p.x - wx, p.y - wy);
+      if (dp <= Math.max(pickR, planet.radius) && dp < bestD) {
+        bestD = dp;
+        best = { kind: 'planet', id: planet.id, label: planet.name, position: p };
+      }
+      for (const moon of planet.moons) {
+        const mp = moonPosition(star, planet, moon, simTime);
+        const dm = Math.hypot(mp.x - wx, mp.y - wy);
+        if (dm <= Math.max(pickR * 0.8, moon.radius) && dm < bestD) {
+          bestD = dm;
+          best = { kind: 'moon', id: moon.id, label: moon.name, position: mp };
+        }
+      }
+    }
+    return best;
   }
 
   private onPointerLeave = () => {
@@ -383,6 +439,9 @@ export class Renderer {
       if (this.galaxyObjs.size) this.clearGalaxies();
       this.drawnGalaxies = 0;
     }
+
+    // Solar-system overlay (only when zoomed into a star).
+    this.updateSystem(cam);
 
     this.drawGrid(cam);
     this.drawMarker();
@@ -586,6 +645,72 @@ export class Renderer {
     }
   }
 
+  // ---- solar system overlay (animated orbits, deterministic) --------------
+
+  private updateSystem(cam: Camera) {
+    const g = this.systemG;
+    g.clear();
+    const detail = systemDetail(cam.zoom);
+    if (detail <= 0.01) {
+      this.focusedStar = null;
+      this.focusedPlanets = [];
+      return;
+    }
+
+    // Focus the star nearest the camera centre (its system fills the view).
+    const star = nearestStar(this.seed, cam.x, cam.y, 320);
+    if (!star) {
+      this.focusedStar = null;
+      this.focusedPlanets = [];
+      return;
+    }
+    if (!this.focusedStar || this.focusedStar.id !== star.id) {
+      this.focusedStar = star;
+      this.focusedPlanets = generateSystem(star);
+    }
+
+    const simTime = useUniverseStore.getState().active()?.simTime ?? 0;
+    const lw = 1 / cam.zoom;
+
+    // Central star, enlarged for the system view.
+    const sr = 3 + Math.min(6, Math.log10(1 + star.luminosity) * 2.2);
+    g.circle(star.x, star.y, sr * 2.2).fill({ color: star.color, alpha: 0.12 * detail });
+    g.circle(star.x, star.y, sr).fill({ color: star.color, alpha: 0.9 * detail });
+    g.circle(star.x, star.y, sr * 0.55).fill({ color: 0xffffff, alpha: 0.9 * detail });
+
+    for (const planet of this.focusedPlanets) {
+      // Orbit path.
+      g.circle(star.x, star.y, planet.orbitRadius).stroke({
+        width: lw,
+        color: 0x38406a,
+        alpha: 0.55 * detail,
+      });
+      const p = planetPosition(star, planet, simTime);
+      // Atmosphere halo (thin/temperate atmospheres only; giants excluded).
+      const profile = computeProfile(planet, star);
+      const press = profile.atmosphere.pressure;
+      if (planet.type !== 'gas' && planet.type !== 'iceGiant' && press > 0.05) {
+        const haze = profile.waterCoverage > 0.2 ? 0x9fd8ff : 0xd8c9a8;
+        g.circle(p.x, p.y, planet.radius * 1.7).fill({
+          color: haze,
+          alpha: Math.min(0.28, (Math.min(press, 3) / 3) * 0.3) * detail,
+        });
+      }
+      // Moons + their orbits (drawn under the planet).
+      for (const moon of planet.moons) {
+        g.circle(p.x, p.y, moon.orbitRadius).stroke({
+          width: lw,
+          color: 0x2c3350,
+          alpha: 0.4 * detail,
+        });
+        const mp = moonPosition(star, planet, moon, simTime);
+        g.circle(mp.x, mp.y, moon.radius).fill({ color: moon.color, alpha: 0.9 * detail });
+      }
+      // Planet.
+      g.circle(p.x, p.y, planet.radius).fill({ color: planet.color, alpha: detail });
+    }
+  }
+
   // ---- adaptive grid ------------------------------------------------------
 
   /** Adaptive grid spacing in world units, snapped to a 1-2-5 × 10ⁿ scale. */
@@ -653,25 +778,39 @@ export class Renderer {
     const sel = useUniverseStore.getState().selection;
     if (!sel?.position) return;
 
-    // Galaxy selections ring the whole galaxy; point entities use a fixed
-    // on-screen size.
+    // Resolve a live position + ring radius by kind. Orbiting bodies move, so
+    // they are recomputed from the sim clock each frame rather than the
+    // (stale) click-time position.
+    let px = sel.position.x;
+    let py = sel.position.y;
     let r = 14 / cam.zoom;
+
     if (sel.kind === 'galaxy') {
       const gal = findGalaxyById(sel.id);
       if (gal) r = gal.radius * 1.12;
+    } else if (sel.kind === 'planet' || sel.kind === 'moon') {
+      const resolved = resolveOrbitId(sel.id);
+      if (resolved) {
+        const simTime = useUniverseStore.getState().active()?.simTime ?? 0;
+        const { star, planet, moon } = resolved;
+        const pos = moon
+          ? moonPosition(star, planet, moon, simTime)
+          : planetPosition(star, planet, simTime);
+        px = pos.x;
+        py = pos.y;
+        const rad = moon ? moon.radius : planet.radius;
+        r = Math.max(rad * 1.8, 9 / cam.zoom);
+      }
     }
+
     const lw = 1.5 / cam.zoom;
-    g.circle(sel.position.x, sel.position.y, r).stroke({
-      width: lw,
-      color: 0xa9bbff,
-      alpha: 0.95,
-    });
+    g.circle(px, py, r).stroke({ width: lw, color: 0xa9bbff, alpha: 0.95 });
     // Small crosshair ticks for a targeting feel.
     const t = 5 / cam.zoom;
-    g.moveTo(sel.position.x - r - t, sel.position.y)
-      .lineTo(sel.position.x - r, sel.position.y)
-      .moveTo(sel.position.x + r, sel.position.y)
-      .lineTo(sel.position.x + r + t, sel.position.y)
+    g.moveTo(px - r - t, py)
+      .lineTo(px - r, py)
+      .moveTo(px + r, py)
+      .lineTo(px + r + t, py)
       .stroke({ width: lw, color: 0xa9bbff, alpha: 0.8 });
   }
 

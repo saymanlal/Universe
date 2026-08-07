@@ -61,8 +61,8 @@ working demo, and *extends* previous work rather than rewriting it. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the module map and
 [`docs/PHASES.md`](docs/PHASES.md) for phase-by-phase status.
 
-**Current status: Phase 5 complete** — everything from Phases 1–4 plus
-deterministic **galaxy generation** with clusters and voids, three galaxy types
-with distinct visuals, star density shaped by galactic structure, **LOD zoom
-transitions** that crossfade between galaxies and stars, galaxy statistics, and
-a live "current region" readout.
+**Current status: Phase 7 complete** — everything from Phases 1–6 plus a
+**deep planet generator**: every planet has a deterministic profile — mass,
+gravity, rotation, a composed atmosphere, water coverage, biome, surface
+temperature, and a habitability / life-probability index — shown in a rich
+inspector, with atmosphere halos in the solar-system view.

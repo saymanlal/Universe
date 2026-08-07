@@ -30,8 +30,12 @@ src/
 │   ├── star.ts      Star model + generation (spectral class, T→colour…)
 │   ├── starfield.ts Chunked/cached star field: region query, nearest-hit,
 │   │                id resolution, bounded search (density driven by galaxies)
-│   └── galaxy.ts    Galaxies + clusters/voids (region-density noise), LOD
-│                    statistics, galaxyAt / star-density field
+│   ├── galaxy.ts    Galaxies + clusters/voids (region-density noise), LOD
+│   │                statistics, galaxyAt / star-density field
+│   ├── planet.ts    Solar systems: planets + moons, Kepler orbits animated by
+│   │                the sim clock, id resolution (planet/moon)
+│   └── planetProfile.ts  Deep planet profile: mass/gravity/rotation,
+│                    atmosphere, water, biome, habitability & life probability
 │
 ├── db/              Persistence (no backend)
 │   └── database.ts  Dexie/IndexedDB schema + universe/snapshot/kv helpers

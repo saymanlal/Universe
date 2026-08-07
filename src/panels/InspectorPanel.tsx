@@ -1,6 +1,7 @@
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { StarInspector } from '@/panels/inspectors/StarInspector';
 import { GalaxyInspector } from '@/panels/inspectors/GalaxyInspector';
+import { PlanetInspector } from '@/panels/inspectors/PlanetInspector';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -50,6 +51,10 @@ export function InspectorPanel() {
       ) : selection?.kind === 'galaxy' ? (
         <div className="flex-1 overflow-auto">
           <GalaxyInspector id={selection.id} />
+        </div>
+      ) : selection?.kind === 'planet' || selection?.kind === 'moon' ? (
+        <div className="flex-1 overflow-auto">
+          <PlanetInspector id={selection.id} />
         </div>
       ) : (
         <div className="flex-1 overflow-auto p-3">

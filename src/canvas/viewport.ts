@@ -17,14 +17,32 @@ export const ZOOM_MAX = 24;
 export const LOD_LO = 0.012;
 export const LOD_HI = 0.045;
 
+/** Solar-system view band: orbits/planets fade in as you zoom into a star.
+ *  Tuned so a whole system (orbits up to ~120 world units) is visible at full
+ *  detail around zoom `SYS_FRAME`. */
+export const SYS_LO = 1.2;
+export const SYS_HI = 3;
+/** Zoom used by "Enter/Frame system" actions (whole system in view, full detail). */
+export const SYS_FRAME = 3;
+
 export function clampZoom(zoom: number): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom));
+}
+
+function smoothstep(t: number): number {
+  return t * t * (3 - 2 * t);
 }
 
 /** Smooth 0→1 ramp across the LOD band; 1 = full star detail. */
 export function starDetail(zoom: number): number {
   if (zoom <= LOD_LO) return 0;
   if (zoom >= LOD_HI) return 1;
-  const t = (zoom - LOD_LO) / (LOD_HI - LOD_LO);
-  return t * t * (3 - 2 * t); // smoothstep
+  return smoothstep((zoom - LOD_LO) / (LOD_HI - LOD_LO));
+}
+
+/** Smooth 0→1 ramp for the solar-system overlay; 1 = full system detail. */
+export function systemDetail(zoom: number): number {
+  if (zoom <= SYS_LO) return 0;
+  if (zoom >= SYS_HI) return 1;
+  return smoothstep((zoom - SYS_LO) / (SYS_HI - SYS_LO));
 }
