@@ -5,6 +5,7 @@ import { computeProfile } from '@/sim/planetProfile';
 import { generatePlanetaryChemistry } from '@/core/chemistry';
 import { generatePlanetaryClimate } from '@/core/climate';
 import { generatePlanetaryBiosphere } from '@/core/life';
+import { computeEvolutionaryState } from '@/core/evolution';
 import { formatCompact, YEAR_SECONDS } from '@/core/format';
 import { SYS_FRAME } from '@/canvas/viewport';
 import { useUniverseStore } from '@/state/useUniverseStore';
@@ -208,6 +209,15 @@ export function PlanetInspector({ id }: { id: string }) {
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  <div className="mt-3 border-t border-space-700/60 pt-2">
+                    <div className="mb-1 text-[11px] font-medium text-space-300">Evolutionary Dynamics</div>
+                    <Stat label="Stage" value={computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).evolutionaryStage.replace('_', ' ').toUpperCase()} />
+                    <Stat label="Simulated Generations" value={formatCompact(computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).generationCount)} />
+                    <Meter label="Mutation rate" value={computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).mutationRate} color="#f43f5e" />
+                    <Meter label="Selection pressure" value={computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).selectionPressure} color="#eab308" />
+                    <Meter label="Adaptation index" value={computeEvolutionaryState(planet, profile, generatePlanetaryBiosphere(planet, profile), useUniverseStore.getState().active()?.simTime).adaptationIndex} color="#22c55e" />
                   </div>
                 </>
               ) : (

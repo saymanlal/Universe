@@ -237,6 +237,21 @@ gravity, rotation, life probability. Everything deterministic.
 
 ---
 
+## ✅ Phase 15 — Evolution Engine
+
+**Goal:** Evolution engine — mutation, natural selection, adaptation.
+
+**Delivered**
+
+- **`core/evolution.ts`** — deterministic evolution engine: calculates generation counts, environmental selection pressure, mutation rates, adaptation indices, extinction risk, active trait adaptations, and evolutionary stage transitions (abiogenesis → sentience threshold).
+- **`PlanetInspector` UI** — added **Evolutionary Dynamics** card within the Biosphere inspector section displaying stage classification, generation counters, mutation rate meters, and adaptation progress.
+
+**Verification**
+
+- `npm run build` passes cleanly; evolutionary metrics update deterministically with simulation clock progression. Vercel Free unchanged.
+
+---
+
 ## ✅ Phase 8 — Time Engine
 
 **Goal:** Time engine — pause, play, speed, minute/hour/day/year, fast forward,
