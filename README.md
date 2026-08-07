@@ -61,7 +61,7 @@ working demo, and *extends* previous work rather than rewriting it. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the module map and
 [`docs/PHASES.md`](docs/PHASES.md) for phase-by-phase status.
 
-**Current status: Phase 3 complete** — everything from Phases 1–2 plus a full
-Universe Manager: rich cards (universe + timeline seeds, sim clock, snapshot
-count), inline rename, duplicate, delete-with-confirm, search, sort, a seed
-randomizer, and a live seed preview. All persisted locally in IndexedDB.
+**Current status: Phase 4 complete** — everything from Phases 1–3 plus
+procedural, infinite, seed-deterministic **star generation**: spectral classes
+with realistic properties and colours, lazy chunked/cached rendering, click to
+select, an inspector with physical properties, and a Ctrl/⌘+K search palette.

@@ -7,6 +7,7 @@ import {
   PlayIcon,
   SlidersIcon,
   CrosshairIcon,
+  SearchIcon,
 } from '@/components/icons';
 
 /** Simulation speed presets (sim-seconds per real second). */
@@ -28,6 +29,7 @@ export function Toolbar() {
   const time = useUniverseStore((s) => s.time);
   const setTime = useUniverseStore((s) => s.setTime);
   const setManagerOpen = useUiStore((s) => s.setManagerOpen);
+  const setSearchOpen = useUiStore((s) => s.setSearchOpen);
   const panels = useUiStore((s) => s.panels);
   const togglePanel = useUiStore((s) => s.togglePanel);
 
@@ -48,6 +50,17 @@ export function Toolbar() {
       <button className="btn" onClick={() => setManagerOpen(true)}>
         <LayersIcon width={14} height={14} />
         {active ? active.name : 'No universe'}
+      </button>
+
+      <button
+        className="btn"
+        onClick={() => setSearchOpen(true)}
+        disabled={!active}
+        title="Search stars (Ctrl/⌘+K or /)"
+      >
+        <SearchIcon width={14} height={14} />
+        Search
+        <span className="kbd ml-1">⌘K</span>
       </button>
 
       <div className="mx-auto flex items-center gap-1 rounded-lg border border-space-700 bg-space-850 px-1 py-1">

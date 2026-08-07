@@ -14,11 +14,14 @@ interface UiState {
   rightWidth: number;
   /** Universe manager modal. */
   managerOpen: boolean;
+  /** Search command palette. */
+  searchOpen: boolean;
 
   togglePanel: (panel: keyof PanelVisibility) => void;
   setLeftWidth: (w: number) => void;
   setRightWidth: (w: number) => void;
   setManagerOpen: (open: boolean) => void;
+  setSearchOpen: (open: boolean) => void;
 }
 
 export const MIN_DOCK_WIDTH = 220;
@@ -31,10 +34,12 @@ export const useUiStore = create<UiState>((set) => ({
   leftWidth: 260,
   rightWidth: 320,
   managerOpen: false,
+  searchOpen: false,
 
   togglePanel: (panel) =>
     set((s) => ({ panels: { ...s.panels, [panel]: !s.panels[panel] } })),
   setLeftWidth: (w) => set({ leftWidth: clampDock(w) }),
   setRightWidth: (w) => set({ rightWidth: clampDock(w) }),
   setManagerOpen: (open) => set({ managerOpen: open }),
+  setSearchOpen: (open) => set({ searchOpen: open }),
 }));

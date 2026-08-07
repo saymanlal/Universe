@@ -95,7 +95,39 @@ seed, timeline seed, persist locally.
 
 ---
 
+## ✅ Phase 4 — Procedural Star Generation
+
+**Goal:** Procedural stars — visible, infinite, seed-deterministic, searchable,
+inspectable.
+
+**Delivered**
+
+- **`sim/star.ts`** — a full star model (spectral class O–M with a realistic
+  mass-function distribution, sub-class, temperature, mass, radius,
+  Stefan–Boltzmann luminosity, blackbody-approx colour, catalog designation and
+  proper names for notable stars). Every field is a pure function of the
+  universe seed + grid position — regenerating always yields the same star.
+- **`sim/starfield.ts`** — chunked, LRU-cached generation with: region query,
+  nearest-star hit-testing, `findStarById` (stable ids `S:seed:cx:cy:i`), and a
+  bounded `searchStars` (space is infinite, so search windows around the view).
+- **Renderer integration** — the viewport now draws *real* stars (colour +
+  brightness-scaled size + halos) via the shared field, replacing the decorative
+  Phase 1 dots. Click selects the nearest star (click-vs-drag slop), with a
+  constant-screen-size selection ring + crosshair.
+- **Star inspector** — resolves the selected star by id and shows its physical
+  properties, a colour swatch, and a "Focus" button.
+- **Search command palette** — Ctrl/⌘+K or `/`, ranked results, keyboard nav,
+  teleport-on-select; also a toolbar Search button.
+
+**Verification**
+
+- `npm run build` passes; stars render deterministically, are clickable and
+  searchable, and the inspector resolves them without any storage. Static SPA →
+  Vercel Free unchanged.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 4** — Procedural star generation (visible, infinite, searchable).
+- **Phase 5** — Galaxy generation, clusters, LOD, zoom transitions.
 - …through **Phase 40** — production release.

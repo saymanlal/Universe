@@ -1,14 +1,17 @@
 import { Application, Container, Graphics, Text } from 'pixi.js';
-import { Rng, combineSeeds } from '@/core/rng';
 import { formatCompact } from '@/core/format';
 import type { Camera } from '@/core/types';
+import {
+  STAR_CHUNK_SIZE,
+  generateChunkStars,
+  clearStarCache,
+  nearestStar,
+} from '@/sim/starfield';
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { useStatsStore } from '@/state/useStatsStore';
 
-/** World units per background starfield chunk. */
-const CHUNK_SIZE = 1600;
-/** Stars generated per chunk (deterministic from seed + chunk coords). */
-const STARS_PER_CHUNK = 46;
+/** World units per star chunk (shared with the star field generator). */
+const CHUNK_SIZE = STAR_CHUNK_SIZE;
 /** Hard cap so extreme zoom-out never explodes the object count. */
 const MAX_VISIBLE_CHUNKS = 600;
 
@@ -21,8 +24,10 @@ const CAM_STIFFNESS = 16;
 const KEY_PAN_SPEED = 900;
 /** Below this delta the display camera snaps to the target (kills jitter). */
 const CAM_EPSILON = 0.01;
-
-const STAR_TINTS = [0xffffff, 0xbfd0ff, 0xfff3d6, 0xffd9b0, 0xd6c4ff, 0xc9f2ff];
+/** Click vs drag threshold in screen pixels. */
+const CLICK_SLOP = 4;
+/** A glow halo is drawn only for stars at least this large (perf). */
+const GLOW_MIN_RADIUS = 2.2;
 
 /**
  * The core PixiJS viewport renderer.
@@ -45,6 +50,7 @@ export class Renderer {
   private starLayer = new Container();
   private gridG = new Graphics();
   private markerG = new Graphics();
+  private selectionG = new Graphics();
   private labelLayer = new Container();
   private labelPool: Text[] = [];
   private chunks = new Map<string, Container>();
@@ -65,6 +71,10 @@ export class Renderer {
   private lastPointer = { x: 0, y: 0 };
   private pointerScreen: { x: number; y: number } | null = null;
   private keys = new Set<string>();
+  /** Where the pointer went down (screen px) + whether it moved past slop. */
+  private downAt: { x: number; y: number } | null = null;
+  private movedSinceDown = false;
+  private drawnStars = 0;
 
   // fps sampling
   private fpsAccum = 0;
@@ -92,9 +102,10 @@ export class Renderer {
     this.app.canvas.style.width = '100%';
     this.app.canvas.style.height = '100%';
 
-    // Draw order: grid (back) -> stars -> marker, all inside the scaled world.
+    // Draw order: grid (back) -> stars -> selection -> marker, in scaled world.
     this.world.addChild(this.gridG);
     this.world.addChild(this.starLayer);
+    this.world.addChild(this.selectionG);
     this.world.addChild(this.markerG);
     this.app.stage.addChild(this.world);
     // Coordinate labels live in screen space so they stay pixel-crisp at any zoom.
@@ -108,6 +119,7 @@ export class Renderer {
       const nextSeed = s.active()?.seed ?? 0;
       if (nextSeed !== this.seed) {
         this.seed = nextSeed;
+        clearStarCache();
         this.clearChunks();
       }
     });
@@ -200,6 +212,8 @@ export class Renderer {
 
   private onPointerDown = (e: PointerEvent) => {
     this.dragging = true;
+    this.movedSinceDown = false;
+    this.downAt = { x: e.clientX, y: e.clientY };
     this.lastPointer = { x: e.clientX, y: e.clientY };
     this.app.canvas.style.cursor = 'grabbing';
   };
@@ -209,6 +223,10 @@ export class Renderer {
     this.pointerScreen = { x: e.clientX - rect.left, y: e.clientY - rect.top };
 
     if (this.dragging) {
+      if (this.downAt) {
+        const md = Math.hypot(e.clientX - this.downAt.x, e.clientY - this.downAt.y);
+        if (md > CLICK_SLOP) this.movedSinceDown = true;
+      }
       const cam = useUniverseStore.getState().camera;
       const dx = e.clientX - this.lastPointer.x;
       const dy = e.clientY - this.lastPointer.y;
@@ -220,12 +238,36 @@ export class Renderer {
     }
   };
 
-  private onPointerUp = () => {
+  private onPointerUp = (e: PointerEvent) => {
     if (this.dragging) {
       this.dragging = false;
       this.app.canvas.style.cursor = 'grab';
+      // A click (no meaningful drag) selects the star under the cursor.
+      if (!this.movedSinceDown && this.downAt) {
+        const rect = this.app.canvas.getBoundingClientRect();
+        this.selectAt(e.clientX - rect.left, e.clientY - rect.top);
+      }
+      this.downAt = null;
     }
   };
+
+  /** Hit-test the star field at a screen point and update the selection. */
+  private selectAt(sx: number, sy: number) {
+    const w = this.screenToWorld(sx, sy, this.display);
+    // ~12px pick radius, expressed in world units at the current zoom.
+    const star = nearestStar(this.seed, w.x, w.y, 12 / this.display.zoom);
+    const store = useUniverseStore.getState();
+    if (star) {
+      store.setSelection({
+        kind: 'star',
+        id: star.id,
+        label: star.name ?? star.designation,
+        position: { x: star.x, y: star.y },
+      });
+    } else {
+      store.setSelection(null);
+    }
+  }
 
   private onPointerLeave = () => {
     this.pointerScreen = null;
@@ -289,6 +331,7 @@ export class Renderer {
     this.updateStarfield(cam);
     this.drawGrid(cam);
     this.drawMarker();
+    this.drawSelection(cam);
     this.drawLabels(cam);
 
     // Publish the smoothed camera for the mini-map / HUD (imperative, no re-render).
@@ -315,15 +358,14 @@ export class Renderer {
   // ---- starfield (lazy, chunked, deterministic) ---------------------------
 
   private buildChunk(cx: number, cy: number): Container {
-    const rng = new Rng(combineSeeds(this.seed, cx, cy, 0x51a7));
+    const stars = generateChunkStars(this.seed, cx, cy);
     const g = new Graphics();
-    for (let i = 0; i < STARS_PER_CHUNK; i++) {
-      const x = cx * CHUNK_SIZE + rng.float(0, CHUNK_SIZE);
-      const y = cy * CHUNK_SIZE + rng.float(0, CHUNK_SIZE);
-      const r = rng.float(0.6, 2.4);
-      const alpha = rng.float(0.25, 0.95);
-      const tint = rng.pick(STAR_TINTS);
-      g.circle(x, y, r).fill({ color: tint, alpha });
+    for (const s of stars) {
+      // Soft halo for the brighter stars, then the core.
+      if (s.renderRadius >= GLOW_MIN_RADIUS) {
+        g.circle(s.x, s.y, s.renderRadius * 2.4).fill({ color: s.color, alpha: 0.1 });
+      }
+      g.circle(s.x, s.y, s.renderRadius).fill({ color: s.color, alpha: 0.95 });
     }
     const chunk = new Container();
     chunk.addChild(g);
@@ -340,6 +382,7 @@ export class Renderer {
 
     const wanted = new Set<string>();
     let count = 0;
+    let starTotal = 0;
     for (let cy = minCY; cy <= maxCY; cy++) {
       for (let cx = minCX; cx <= maxCX; cx++) {
         if (count >= MAX_VISIBLE_CHUNKS) break;
@@ -350,9 +393,11 @@ export class Renderer {
           this.chunks.set(key, chunk);
           this.starLayer.addChild(chunk);
         }
+        starTotal += generateChunkStars(this.seed, cx, cy).length;
         count++;
       }
     }
+    this.drawnStars = starTotal;
 
     // Recycle chunks that scrolled out of view.
     for (const [key, chunk] of this.chunks) {
@@ -363,7 +408,7 @@ export class Renderer {
       }
     }
 
-    useStatsStore.getState().setDrawn(this.chunks.size * STARS_PER_CHUNK);
+    useStatsStore.getState().setDrawn(this.drawnStars);
   }
 
   private clearChunks() {
@@ -432,6 +477,28 @@ export class Renderer {
     // Genesis point at the universe origin.
     g.circle(0, 0, 6).fill({ color: 0x6d8bff, alpha: 0.9 });
     g.circle(0, 0, 12).stroke({ width: 1.5, color: 0x6d8bff, alpha: 0.5 });
+  }
+
+  /** Highlight ring around the currently-selected entity (constant screen size). */
+  private drawSelection(cam: Camera) {
+    const g = this.selectionG;
+    g.clear();
+    const sel = useUniverseStore.getState().selection;
+    if (!sel?.position) return;
+    const r = 14 / cam.zoom;
+    const lw = 1.5 / cam.zoom;
+    g.circle(sel.position.x, sel.position.y, r).stroke({
+      width: lw,
+      color: 0xa9bbff,
+      alpha: 0.95,
+    });
+    // Small crosshair ticks for a targeting feel.
+    const t = 5 / cam.zoom;
+    g.moveTo(sel.position.x - r - t, sel.position.y)
+      .lineTo(sel.position.x - r, sel.position.y)
+      .moveTo(sel.position.x + r, sel.position.y)
+      .lineTo(sel.position.x + r + t, sel.position.y)
+      .stroke({ width: lw, color: 0xa9bbff, alpha: 0.8 });
   }
 
   // ---- coordinate labels (screen-space, pooled Text) ----------------------

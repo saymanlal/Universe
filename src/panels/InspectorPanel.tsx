@@ -1,4 +1,5 @@
 import { useUniverseStore } from '@/state/useUniverseStore';
+import { StarInspector } from '@/panels/inspectors/StarInspector';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -41,7 +42,12 @@ export function InspectorPanel() {
         </span>
       </div>
 
-      <div className="flex-1 overflow-auto p-3">
+      {selection?.kind === 'star' ? (
+        <div className="flex-1 overflow-auto">
+          <StarInspector id={selection.id} />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto p-3">
         <div className="mb-4">
           <label className="field-label">Name</label>
           <input
@@ -76,7 +82,8 @@ export function InspectorPanel() {
             />
           )}
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

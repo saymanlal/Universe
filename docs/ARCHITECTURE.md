@@ -26,6 +26,11 @@ src/
 │   ├── format.ts    Compact number formatting (k/M/G) for HUD labels
 │   └── types.ts     Shared domain types (Universe, Camera, Selection…)
 │
+├── sim/             Deterministic procedural generation (pure, on demand)
+│   ├── star.ts      Star model + generation (spectral class, T→colour…)
+│   └── starfield.ts Chunked/cached star field: region query, nearest-hit,
+│                    id resolution, bounded search
+│
 ├── db/              Persistence (no backend)
 │   └── database.ts  Dexie/IndexedDB schema + universe/snapshot/kv helpers
 │
@@ -50,7 +55,9 @@ src/
 ├── panels/          Dockable tool panels
 │   ├── OutlinerPanel.tsx    Scene tree
 │   ├── GodPanel.tsx         God-Mode toolbox
-│   ├── InspectorPanel.tsx   Property inspector
+│   ├── InspectorPanel.tsx   Property inspector (delegates by selection kind)
+│   ├── inspectors/          Per-entity inspector bodies (StarInspector…)
+│   ├── SearchPanel.tsx      Command-palette star search
 │   └── UniverseManager.tsx  Create/switch/delete universes
 │
 ├── components/      Shared presentational pieces (icons, boot, empty states)

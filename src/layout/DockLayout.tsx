@@ -5,11 +5,13 @@ import { OutlinerPanel } from '@/panels/OutlinerPanel';
 import { GodPanel } from '@/panels/GodPanel';
 import { InspectorPanel } from '@/panels/InspectorPanel';
 import { UniverseManager } from '@/panels/UniverseManager';
+import { SearchPanel } from '@/panels/SearchPanel';
 import { UniverseCanvas } from '@/canvas/UniverseCanvas';
 import { ViewportOverlay } from '@/canvas/ViewportOverlay';
 import { MiniMap } from '@/canvas/MiniMap';
 import { useUiStore } from '@/state/useUiStore';
 import { useTimeEngine } from '@/state/useTimeEngine';
+import { useEffect } from 'react';
 
 /**
  * The Unity/Figma-style dockable workspace: a top toolbar, resizable left and
@@ -18,6 +20,27 @@ import { useTimeEngine } from '@/state/useTimeEngine';
  */
 export function DockLayout() {
   useTimeEngine();
+  const setSearchOpen = useUiStore((s) => s.setSearchOpen);
+
+  // Global shortcuts: Ctrl/Cmd+K or "/" opens star search (unless typing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement;
+      const typing =
+        el instanceof HTMLElement &&
+        (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSearchOpen(true);
+      } else if (e.key === '/' && !typing) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setSearchOpen]);
+
   const panels = useUiStore((s) => s.panels);
   const leftWidth = useUiStore((s) => s.leftWidth);
   const rightWidth = useUiStore((s) => s.rightWidth);
@@ -74,6 +97,7 @@ export function DockLayout() {
 
       <StatusBar />
       <UniverseManager />
+      <SearchPanel />
     </div>
   );
 }
