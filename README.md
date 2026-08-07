@@ -61,8 +61,8 @@ working demo, and *extends* previous work rather than rewriting it. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the module map and
 [`docs/PHASES.md`](docs/PHASES.md) for phase-by-phase status.
 
-**Current status: Phase 7 complete** — everything from Phases 1–6 plus a
-**deep planet generator**: every planet has a deterministic profile — mass,
-gravity, rotation, a composed atmosphere, water coverage, biome, surface
-temperature, and a habitability / life-probability index — shown in a rich
-inspector, with atmosphere halos in the solar-system view.
+**Current status: Phase 8 complete** — everything from Phases 1–7 plus a full
+**time engine**: a timeline bar with play/pause, step, rewind, fast-forward,
+speed presets (real-time → 1 year/sec), a live Y·D·HH:MM:SS clock, and
+jump-to-year. Because the cosmos is a pure function of the sim clock, time can
+run forward, backward, be stepped, or jumped — planets orbit as it advances.

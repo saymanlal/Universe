@@ -8,21 +8,12 @@ import {
   SlidersIcon,
   CrosshairIcon,
   SearchIcon,
+  ClockIcon,
 } from '@/components/icons';
 
-/** Simulation speed presets (sim-seconds per real second). */
-const SPEEDS = [1, 60, 3600, 86400, 604800];
-const SPEED_LABELS: Record<number, string> = {
-  1: '1×',
-  60: 'min',
-  3600: 'hour',
-  86400: 'day',
-  604800: 'week',
-};
-
 /**
- * The top application toolbar: brand, universe switcher entry point, time
- * transport (foundation for Phase 8), and panel toggles.
+ * The top application toolbar: brand, universe switcher, star search, a compact
+ * play/pause (full controls live in the Timeline bar), and panel toggles.
  */
 export function Toolbar() {
   const active = useUniverseStore((s) => s.active());
@@ -65,35 +56,26 @@ export function Toolbar() {
 
       <div className="mx-auto flex items-center gap-1 rounded-lg border border-space-700 bg-space-850 px-1 py-1">
         <button
-          className={`btn btn-icon ${!time.paused ? '' : 'btn-primary'}`}
-          title="Pause"
-          onClick={() => setTime({ paused: true })}
+          className={`btn btn-icon ${time.paused ? 'btn-primary' : ''}`}
+          title={time.paused ? 'Play' : 'Pause'}
+          onClick={() => setTime({ paused: !time.paused })}
           disabled={!active}
         >
-          <PauseIcon width={14} height={14} />
+          {time.paused ? <PlayIcon width={14} height={14} /> : <PauseIcon width={14} height={14} />}
         </button>
-        <button
-          className={`btn btn-icon ${time.paused ? '' : 'btn-primary'}`}
-          title="Play"
-          onClick={() => setTime({ paused: false })}
-          disabled={!active}
-        >
-          <PlayIcon width={14} height={14} />
-        </button>
-        <div className="mx-1 h-4 w-px bg-space-700" />
-        {SPEEDS.map((sp) => (
-          <button
-            key={sp}
-            className={`btn px-2 ${time.speed === sp ? 'text-white' : ''}`}
-            onClick={() => setTime({ speed: sp })}
-            disabled={!active}
-          >
-            {SPEED_LABELS[sp]}
-          </button>
-        ))}
+        <span className="px-1.5 text-[11px] text-space-400">
+          {time.paused ? 'paused' : time.reverse ? 'rewinding' : 'running'}
+        </span>
       </div>
 
       <div className="flex items-center gap-1">
+        <button
+          className={`btn btn-icon ${panels.timeline ? 'text-white' : ''}`}
+          title="Toggle Timeline"
+          onClick={() => togglePanel('timeline')}
+        >
+          <ClockIcon width={16} height={16} />
+        </button>
         <button
           className={`btn btn-icon ${panels.outliner ? 'text-white' : ''}`}
           title="Toggle Outliner"

@@ -223,7 +223,36 @@ gravity, rotation, life probability. Everything deterministic.
 
 ---
 
+## ✅ Phase 8 — Time Engine
+
+**Goal:** Time engine — pause, play, speed, minute/hour/day/year, fast forward,
+timeline clock.
+
+**Delivered**
+
+- **`TimelineBar`** — a dedicated bottom control surface: transport (step
+  back/forward, rewind, play/pause, play-forward, fast-forward), speed presets
+  (1× → min/hour/day/week/year per second), a reverse toggle, a large live
+  **timeline clock** (Y · D · HH:MM:SS + rate + elapsed), and a **jump-to-year**
+  control.
+- **Reverse & jump** — `TimeState.reverse` lets the clock run backward; the
+  engine advances a *signed* delta. `advanceTime` now clamps ≥ 0 and supports
+  negative steps; new `setSimTime` jumps to any absolute time. Because the whole
+  cosmos is a pure function of `simTime`, stepping/rewinding/jumping just
+  re-derives everything (orbits included) deterministically.
+- **Fast-forward** runs at 50 yr/s; **step** advances exactly one tick of the
+  selected granularity while paused.
+- Toolbar transport simplified to a compact play/pause + state, with a Timeline
+  panel toggle; `core/format.simTimeParts` powers the clock.
+
+**Verification**
+
+- `npm run build` passes; play/pause/reverse/step/fast-forward/jump all drive
+  the deterministic clock; planets orbit as time runs. Vercel Free unchanged.
+
+---
+
 ## ⬜ Upcoming
 
-- **Phase 8** — Time engine UI (pause/play/speed, minute→year, timeline clock).
+- **Phase 9** — God tools: spawn/delete/move/clone, multi-select, undo/redo.
 - …through **Phase 40** — production release.

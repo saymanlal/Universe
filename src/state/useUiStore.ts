@@ -5,6 +5,7 @@ export interface PanelVisibility {
   outliner: boolean;
   god: boolean;
   inspector: boolean;
+  timeline: boolean;
 }
 
 interface UiState {
@@ -30,7 +31,7 @@ export const MAX_DOCK_WIDTH = 520;
 const clampDock = (w: number) => Math.min(MAX_DOCK_WIDTH, Math.max(MIN_DOCK_WIDTH, Math.round(w)));
 
 export const useUiStore = create<UiState>((set) => ({
-  panels: { outliner: true, god: true, inspector: true },
+  panels: { outliner: true, god: true, inspector: true, timeline: true },
   leftWidth: 260,
   rightWidth: 320,
   managerOpen: false,

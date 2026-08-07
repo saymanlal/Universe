@@ -6,10 +6,12 @@ import { GodPanel } from '@/panels/GodPanel';
 import { InspectorPanel } from '@/panels/InspectorPanel';
 import { UniverseManager } from '@/panels/UniverseManager';
 import { SearchPanel } from '@/panels/SearchPanel';
+import { TimelineBar } from '@/panels/TimelineBar';
 import { UniverseCanvas } from '@/canvas/UniverseCanvas';
 import { ViewportOverlay } from '@/canvas/ViewportOverlay';
 import { MiniMap } from '@/canvas/MiniMap';
 import { useUiStore } from '@/state/useUiStore';
+import { useUniverseStore } from '@/state/useUniverseStore';
 import { useTimeEngine } from '@/state/useTimeEngine';
 import { useEffect } from 'react';
 
@@ -42,6 +44,7 @@ export function DockLayout() {
   }, [setSearchOpen]);
 
   const panels = useUiStore((s) => s.panels);
+  const hasUniverse = useUniverseStore((s) => s.activeId !== null);
   const leftWidth = useUiStore((s) => s.leftWidth);
   const rightWidth = useUiStore((s) => s.rightWidth);
   const setLeftWidth = useUiStore((s) => s.setLeftWidth);
@@ -94,6 +97,8 @@ export function DockLayout() {
           </>
         )}
       </div>
+
+      {panels.timeline && hasUniverse && <TimelineBar />}
 
       <StatusBar />
       <UniverseManager />

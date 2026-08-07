@@ -65,6 +65,7 @@ src/
 │   ├── InspectorPanel.tsx   Property inspector (delegates by selection kind)
 │   ├── inspectors/          Per-entity inspector bodies (StarInspector…)
 │   ├── SearchPanel.tsx      Command-palette star search
+│   ├── TimelineBar.tsx      Time engine: transport, speed, clock, jump-to
 │   └── UniverseManager.tsx  Create/switch/delete universes
 │
 ├── components/      Shared presentational pieces (icons, boot, empty states)

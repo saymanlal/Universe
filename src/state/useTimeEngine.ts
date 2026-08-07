@@ -20,7 +20,8 @@ export function useTimeEngine() {
 
       const { time, activeId, advanceTime } = useUniverseStore.getState();
       if (!time.paused && activeId) {
-        accum += dtReal * time.speed;
+        const signed = time.reverse ? -time.speed : time.speed;
+        accum += dtReal * signed;
         flushAccum += dtReal;
         // Flush roughly 10× per second to avoid 60 Hz store churn.
         if (flushAccum >= 0.1) {
