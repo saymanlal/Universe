@@ -41,6 +41,9 @@ const MAX_VISIBLE_GALAXIES = 300;
 /** Below this star-detail the star layer is skipped entirely (LOD). */
 const STAR_LAYER_MIN_ALPHA = 0.02;
 
+import { QuadTree, SpatialItem } from '@/core/quadtree';
+import { getScaleTierFromZoom } from '@/core/scaleContinuum';
+
 /** Camera easing stiffness (higher = snappier). Exponential smoothing. */
 const CAM_STIFFNESS = 16;
 /** Keyboard pan speed in screen-pixels per second (scaled by zoom). */
@@ -79,6 +82,10 @@ export class Renderer {
   private labelLayer = new Container();
   private labelPool: Text[] = [];
   private chunks = new Map<string, Container>();
+  public spatialIndex = new QuadTree<SpatialItem>({ x: -1e6, y: -1e6, width: 2e6, height: 2e6 });
+  public getCurrentScaleTier() {
+    return getScaleTierFromZoom(this.display.zoom);
+  }
   private galaxyObjs = new Map<string, Container>();
   private lastRegion: string | null = null;
   /** The star whose system is currently focused (nearest the camera centre). */

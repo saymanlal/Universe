@@ -9,11 +9,14 @@ import { Rng, combineSeeds } from '@/core/rng';
  * infinite and reproducible.
  */
 
-export type SpectralClass = 'O' | 'B' | 'A' | 'F' | 'G' | 'K' | 'M';
+export type CelestialCategory = 'star' | 'black_hole' | 'neutron_star' | 'pulsar' | 'quasar';
+
+export type SpectralClass = 'O' | 'B' | 'A' | 'F' | 'G' | 'K' | 'M' | 'BH' | 'NS' | 'PSR' | 'QSR';
 
 export interface Star {
   /** Stable id encoding universe seed + grid position: `S:seed:cx:cy:i`. */
   id: string;
+  category: CelestialCategory;
   /** Proper name for notable stars, else null. */
   name: string | null;
   /** Catalog designation (always present). */
@@ -32,6 +35,9 @@ export interface Star {
   /** Baseline draw radius in world units. */
   renderRadius: number;
   chunk: { cx: number; cy: number; i: number };
+  /** Exotic properties for relativistic / accretion effects */
+  accretionDiskAngle?: number;
+  magneticFieldStrength?: number;
 }
 
 interface ClassDef {
@@ -133,31 +139,63 @@ export function generateStar(
   const luminosity = +(radius * radius * Math.pow(temperature / 5772, 4)).toFixed(3);
 
   const color = temperatureToColor(temperature);
-
-  // Brighter/bigger stars render larger (log-compressed).
   const renderRadius = +(1.1 + Math.min(5, Math.log10(1 + luminosity) * 1.6)).toFixed(2);
-
-  // Notable (named) stars: the luminous ones plus an occasional dim curiosity.
   const notable = luminosity > 4 || rng.bool(0.06);
   const name = notable ? makeName(rng) : null;
-
   const catalog = combineSeeds(seed, cx * 73856093, cy * 19349663, i) % 900000 + 100000;
   const designation = `UEC-${catalog}`;
 
+  // Procedural roll for exotic celestial category (black hole, pulsar, neutron star, quasar)
+  const exoticRoll = rng.next();
+  let category: CelestialCategory = 'star';
+  let spectralClass = def.cls;
+  let customColor = color;
+  let customRadius = renderRadius;
+  let accretionAngle: number | undefined = undefined;
+  let magField: number | undefined = undefined;
+
+  if (exoticRoll < 0.015) {
+    category = 'black_hole';
+    spectralClass = 'BH';
+    customColor = 0x050510;
+    customRadius = 3.5;
+    accretionAngle = rng.next() * Math.PI * 2;
+  } else if (exoticRoll < 0.035) {
+    category = 'pulsar';
+    spectralClass = 'PSR';
+    customColor = 0x88eeff;
+    customRadius = 2.2;
+    magField = rng.next() * 1000 + 100;
+  } else if (exoticRoll < 0.05) {
+    category = 'quasar';
+    spectralClass = 'QSR';
+    customColor = 0xffaa44;
+    customRadius = 4.8;
+    accretionAngle = rng.next() * Math.PI * 2;
+  } else if (exoticRoll < 0.07) {
+    category = 'neutron_star';
+    spectralClass = 'NS';
+    customColor = 0xbbffff;
+    customRadius = 1.8;
+  }
+
   return {
     id: `S:${seed}:${cx}:${cy}:${i}`,
+    category,
     name,
     designation,
     x,
     y,
-    spectral: def.cls,
+    spectral: spectralClass,
     subclass,
     temperature,
     mass,
     radius,
     luminosity,
-    color,
-    renderRadius,
+    color: customColor,
+    renderRadius: customRadius,
+    accretionDiskAngle: accretionAngle,
+    magneticFieldStrength: magField,
     chunk: { cx, cy, i },
   };
 }

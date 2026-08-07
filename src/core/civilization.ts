@@ -1,4 +1,4 @@
-import { Rng, hashString } from './rng';
+import { Rng, hashString, combineSeeds } from './rng';
 import type { SapientSpecies } from './species';
 
 export type SettlementType = 'outpost' | 'village' | 'town' | 'city' | 'metropolis';
@@ -13,6 +13,16 @@ export interface Settlement {
   infrastructureLevel: number; // 0 to 100
 }
 
+export type MegastructureType = 'dyson_sphere' | 'ringworld' | 'orbital_ring' | 'space_elevator' | 'stellar_engine';
+
+export interface TradeRoute {
+  id: string;
+  sourceSettlementId: string;
+  targetSettlementId: string;
+  resourceType: string;
+  volume: number;
+}
+
 export interface Civilization {
   id: string;
   name: string;
@@ -22,6 +32,10 @@ export interface Civilization {
   totalPopulation: number;
   settlements: Settlement[];
   techEra: 'primitive' | 'agrarian' | 'industrial' | 'information' | 'interstellar';
+  tradeRoutes: TradeRoute[];
+  spaceProgramActive: boolean;
+  megastructuresConstructed: MegastructureType[];
+  diplomaticRelations: { targetCivId: string; stance: 'allied' | 'neutral' | 'hostile' | 'vassal' }[];
 }
 
 /**
@@ -34,7 +48,7 @@ export function generateCivilizations(
 ): Civilization[] {
   if (!hasSapientLife || !species) return [];
 
-  const rng = new Rng(combineSeedWithSalt(planetSeed, 'civ_gen'));
+  const rng = new Rng(combineSeeds(planetSeed, hashString('civ_gen')));
   const civCount = rng.int(1, 3);
   const civs: Civilization[] = [];
 
@@ -86,6 +100,10 @@ export function generateCivilizations(
       });
     }
 
+    const techEra = rng.pick(['primitive', 'agrarian', 'industrial', 'information', 'interstellar']) as 'primitive' | 'agrarian' | 'industrial' | 'information' | 'interstellar';
+    const spaceProgram = techEra === 'information' || techEra === 'interstellar';
+    const megastructures: MegastructureType[] = techEra === 'interstellar' && rng.bool(0.4) ? [rng.pick(['dyson_sphere', 'orbital_ring', 'space_elevator'])] : [];
+
     civs.push({
       id: `civ_${planetSeed}_${i}`,
       name: civName,
@@ -94,13 +112,21 @@ export function generateCivilizations(
       capitalName: settlements[0].name,
       totalPopulation: totalPop,
       settlements,
-      techEra: rng.pick(['primitive', 'agrarian', 'industrial', 'information']),
+      techEra,
+      tradeRoutes: settlements.length > 1 ? [
+        {
+          id: `tr_${planetSeed}_${i}_0`,
+          sourceSettlementId: settlements[0].id,
+          targetSettlementId: settlements[1].id,
+          resourceType: 'Energy Cells',
+          volume: rng.int(100, 5000),
+        }
+      ] : [],
+      spaceProgramActive: spaceProgram,
+      megastructuresConstructed: megastructures,
+      diplomaticRelations: [],
     });
   }
 
   return civs;
-}
-
-function combineSeedWithSalt(seed: number, salt: string): number {
-  return (seed ^ hashString(salt)) >>> 0;
 }

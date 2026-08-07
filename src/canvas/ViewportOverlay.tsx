@@ -1,5 +1,6 @@
 import { useUniverseStore } from '@/state/useUniverseStore';
 import { clampZoom } from '@/canvas/viewport';
+import { getScaleTierFromZoom } from '@/core/scaleContinuum';
 import { HomeIcon, PlusIcon, GridIcon } from '@/components/icons';
 
 /**
@@ -33,10 +34,13 @@ export function ViewportOverlay() {
         <button className="btn btn-icon" title="Zoom in" onClick={() => zoomBy(1.3)}>
           <PlusIcon width={16} height={16} />
         </button>
+        <div className="px-1.5 py-0.5 text-center font-mono text-[10px] text-accent-cyan bg-space-900/60 rounded my-0.5">
+          {getScaleTierFromZoom(camera.zoom).name}
+        </div>
         <div className="px-1 text-center font-mono text-[10px] text-space-400">
           {camera.zoom >= 0.1
             ? `${Math.round(camera.zoom * 100)}%`
-            : `${camera.zoom.toExponential(0)}×`}
+            : `${camera.zoom.toExponential(1)}×`}
         </div>
         <button className="btn btn-icon" title="Zoom out" onClick={() => zoomBy(1 / 1.3)}>
           <GridIcon width={16} height={16} />

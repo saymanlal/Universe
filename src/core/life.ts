@@ -2,7 +2,17 @@ import { Rng, hashString } from './rng';
 import type { Planet } from '@/sim/planet';
 import type { PlanetProfile } from '@/sim/planetProfile';
 
-export type LifeDomain = 'microbe' | 'plant' | 'animal';
+export type LifeDomain = 
+  | 'microbe' 
+  | 'aquatic' 
+  | 'plant' 
+  | 'insect' 
+  | 'reptilian' 
+  | 'avian' 
+  | 'mammalian' 
+  | 'silicon_based' 
+  | 'energy_based' 
+  | 'exotic_procedural';
 
 export interface Species {
   id: string;
@@ -12,6 +22,7 @@ export interface Species {
   biomassFraction: number; // 0 to 1
   trophicRole: 'producer' | 'consumer' | 'decomposer' | 'apex_predator';
   respirationGas: string;
+  intelligenceTier: 'none' | 'basic' | 'sentient' | 'hyper_intelligent';
   color: string;
   description: string;
 }
@@ -60,6 +71,7 @@ export function generatePlanetaryBiosphere(planet: Planet, profile: PlanetProfil
     biomassFraction: Number(rng.float(0.4, 0.8).toFixed(2)),
     trophicRole: 'decomposer',
     respirationGas: profile.atmosphere.components[0]?.gas ?? 'CO₂',
+    intelligenceTier: 'none',
     color: '#4ade80',
     description: 'Extremophilic microbial colony driving biogeochemical cycles.',
   });
@@ -75,33 +87,35 @@ export function generatePlanetaryBiosphere(planet: Planet, profile: PlanetProfil
       biomassFraction: Number(rng.float(0.2, 0.5).toFixed(2)),
       trophicRole: 'producer',
       respirationGas: 'CO₂',
+      intelligenceTier: 'none',
       color: profile.surfaceTemp > 300 ? '#f59e0b' : '#10b981',
       description: 'Photosynthetic autotroph forming canopy & surface biome.',
     });
   }
 
-  // Animals / Fauna (if advanced habitability)
+  // Fauna / Sentient / Silicon / Energy Life (if advanced habitability)
   if (profile.lifeProbability > 0.35) {
     const animalName = `${rng.pick(ANIMAL_PREFIXES)}${rng.pick(ANIMAL_SUFFIXES)}`;
+    const intelRoll = rng.next();
+    const intelTier = intelRoll > 0.9 ? 'hyper_intelligent' : intelRoll > 0.6 ? 'sentient' : 'basic';
+    const domainRoll = rng.pick<LifeDomain>(['aquatic', 'insect', 'reptilian', 'avian', 'mammalian', 'silicon_based', 'energy_based', 'exotic_procedural']);
+
     speciesList.push({
       id: `sp-anm-${planet.id}`,
       name: animalName,
-      domain: 'animal',
+      domain: domainRoll,
       complexity: Number(rng.float(0.6, 0.95).toFixed(2)),
       biomassFraction: Number(rng.float(0.05, 0.2).toFixed(2)),
       trophicRole: profile.lifeProbability > 0.6 ? 'apex_predator' : 'consumer',
-      respirationGas: 'O₂',
+      respirationGas: domainRoll === 'silicon_based' ? 'CH₄' : domainRoll === 'energy_based' ? 'None' : 'O₂',
+      intelligenceTier: intelTier,
       color: '#a855f7',
-      description: 'Multicellular organism with specialized neural & sensory organs.',
+      description: 'Complex multicellular or exotic intelligence with specialized neural pathways.',
     });
   }
 
   const totalBiomassIndex = Math.round(profile.lifeProbability * 100 * rng.float(0.8, 1.3));
-  const dominantDomain: LifeDomain = speciesList.some((s) => s.domain === 'animal')
-    ? 'animal'
-    : speciesList.some((s) => s.domain === 'plant')
-    ? 'plant'
-    : 'microbe';
+  const dominantDomain: LifeDomain = speciesList.length > 0 ? speciesList[speciesList.length - 1].domain : 'microbe';
 
   return {
     hasLife: true,
